@@ -1,15 +1,14 @@
 #include "msp.h"
 #include "msp432.h"
 #include <stdio.h>
-#define num1 05;
-#define num2 20;
+
 
 /**
  * main.c
  */
 void SysTick_Init(void);
 
-
+void InitializeAll(void);
 void LCD_init(void);
 void delay_micro(unsigned microsec);
 void delay_ms (unsigned ms);
@@ -20,6 +19,13 @@ void commandWrite(uint8_t command);
 void dataWrite(uint8_t data);
 
 void main(void)
+{
+    InitializeAll();
+    
+
+}
+
+void InitializeAll(void)
 {
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;     // stop watchdog timer
     SysTick_Init();
@@ -39,62 +45,7 @@ void main(void)
     P6->OUT &= ~BIT4; //sets Enable pin to 0 initially
 
     LCD_init();
-    commandWrite(0x0C);
-
-
-           float X= num1;   //initializes X as a float and sets it to macro value num1
-           float Y= num2;   //initializes Y as a float and sets it to macro value num2
-
-
-
-           float C=0;   //initializes C as a float
-           char buffer[50]; //initializes buffer as a char with 50 members
-           int i=0; //value i used in for loop
-
-           C= (X/Y);    //sets C equal to the value of X/Y
-
-           sprintf(buffer, "     X= %.1f      ", X);    //puts X value in the string of buffer through use of sprintf() function
-
-
-          for(i=0; i<16; i++)   //prints string with information about X in the first line
-               dataWrite(buffer[i]);
-
-           commandWrite(0xC0);  //moves the cursor to the second line
-           delay_ms(100);   //waits in order to give time for the command to take palce
-
-           sprintf(buffer, "     Y= %.1f     ", Y); //puts Y value in the string of buffer through use of sprintf() function
-          for(i=0; i<16; i++)   //prints string with information about Y on the second line
-               dataWrite(buffer[i]);
-
-
-
-           commandWrite(0x90);  //sets cursor location to the third line
-           delay_ms(100);   //waits to give time for command to take effect
-           char description[]= "Division     X/Y";  //description of what is occurring
-           for(i=0; i<16; i++)  //prints description on the third line
-               dataWrite(description[i]);
-
-
-           commandWrite(0xD0);  //sets cursor location to the fourth line
-           delay_ms(100);   //waits
-           sprintf(buffer, "     C= %.2f       ",C);    //puts C value in a string buffer through sprintf() function
-           for(i=0; i<16; i++)  //prints buffer on the fourth line
-               dataWrite(buffer[i]);
-
-
-
-
-
-
-
-
-
-
-
-
 }
-
-
 //This function goes through the entire initialization sequence as shown in Figure 4
 void LCD_init(void)
 {
