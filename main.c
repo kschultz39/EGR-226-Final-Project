@@ -55,7 +55,7 @@ void main(void)
 
 
     commandWrite(0x0F); //turn off blinking cursor
-    sprintf(buffer, "%d:%d:%d %cM                     ", hour, minute, second, time);
+    sprintf(buffer, "%d:%d:%d %cM                     ", hourclock, minuteclock, secondclock, timeclock);
     commandWrite(0x0C); //Prints to line 1 of LCD
     for(i=0; i<16; i++)
         dataWrite(buffer[i]);
@@ -382,36 +382,36 @@ void sethour(void)
     {
         while(!((P1->IN & BIT6) == BIT6))
         {
-            hour+=1;
-            if(hour==12)
+            houralarm+=1;
+            if(houralarm==12)
             {
-                if(alarmclock== 'A')
-                    alarmclock='P';
-                else if(alarmclock=='P')
-                    alarmclock= 'A';
+                if(timealarm== 'A')
+                    timealarm='P';
+                else if(timealarm=='P')
+                    timealarm= 'A';
                 delay_ms(300); //wait
-                hour=1;
+                houralarm=1;
             }
             delay_ms(300); //wait
         }
     }
-    if(sethourclock==1)
+    if(sethourtime==1)
     {
         while(!((P1->IN & BIT7) == BIT7))
         {
-            hour+=1;
-            if(hour==12)
+            hourclock+=1;
+            if(hourclock==12)
             {
-                if(alarmclock== 'A')
-                    alarmclock='P';
-                else if(alarmclock=='P')
-                    alarmclock= 'A';
+                if(timeclock== 'A')
+                    timeclock='P';
+                else if(timeclock=='P')
+                    timeclock= 'A';
                 delay_ms(300); //wait
-                hour=1;
+                hourclock=1;
              }
             delay_ms(300); //wait
-         }        
-    } 
+         }
+    }
 }
 
 void setminute(void)
@@ -420,28 +420,28 @@ void setminute(void)
         {
             while(!((P1->IN & BIT6) == BIT6))
             {
-                minute+=1;
-                if(minute==59)
+                minutealarm+=1;
+                if(minutealarm==59)
                 {
                     delay_ms(300); //wait
-                    minute=0;
+                    minutealarm=0;
                 }
                 delay_ms(300); //wait
             }
         }
-   if(sethourclock==1)
+   if(sethourtime==1)
    {
        while(!((P1->IN & BIT7) == BIT7))
        {
-           hour+=1;
-           if(hour==59)
+           hourclock+=1;
+           if(hourclock==59)
            {
                delay_ms(300); //wait
-               minute=0;
+               hourclock=0;
            }
            delay_ms(300); //wait
-        }        
-   } 
+        }
+   }
 }
 void setsecond(void)
 {
@@ -449,30 +449,26 @@ void setsecond(void)
          {
              while(!((P1->IN & BIT6) == BIT6))
              {
-                 second+=1;
-                 if(second==59)
+                 secondalarm+=1;
+                 if(secondalarm==59)
                  {
                      delay_ms(300); //wait
-                     second=0;
+                     secondalarm=0;
                  }
                  delay_ms(300); //wait
              }
          }
-    if(setsecondclock==1)
+    if(setsecondtime==1)
     {
         while(!((P1->IN & BIT7) == BIT7))
         {
-            second+=1;
-            if(second==59)
+            secondclock+=1;
+            if(secondclock==59)
             {
                 delay_ms(300); //wait
-                second=0;
+                secondclock=0;
             }
             delay_ms(300); //wait
-         }        
-    } 
-}
-
+         }
     }
-
 }
