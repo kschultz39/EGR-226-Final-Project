@@ -1,5 +1,4 @@
 #include "msp.h"
-#include "msp.h"
 #include "msp432.h"
 #include <stdio.h>
 #include "math.h"
@@ -28,6 +27,21 @@ int second=0;
 char time;
 int result=0;
 
+int alarmflag=0;
+int setalarmflag=0;
+int settimeflag=0;
+int sethouralarm=0;
+int setminutealarm=0;
+int setsecondalarm=0;
+int sethourtime=0;
+int setminutetime=0;
+int setsecondtime=0;
+
+enum states{
+    DEFAULT,//Default state
+    SETALARM,
+    SETTIME,
+};
 
 void main(void)
 {
@@ -61,6 +75,7 @@ void main(void)
         dataWrite(buffer[i]);
     dataWrite('F');
     delay_ms(300);
+
 
 
 
@@ -110,7 +125,7 @@ void InitializeAll(void)
     TIMER_A1->CTL = 0b0000001000010100;
 
     //BUTTON INITIALIZATION
-    //BUTTON 1.6 and BUTTON 1.7 (Button 1.6 corresponds to Mode 1: 1 second alarm= 1 second real, Button 1.7 corresponds to Mode 2: 1 second alarm= 1 second real)
+    //BUTTON 1.6 and BUTTON 1.7 (Button 1.6 SET ALARM, Button 1.7 SET TIME)
     P1-> SEL0 &= ~(BIT6|BIT7);
     P1 -> SEL1 &= ~(BIT6|BIT7);
     P1 -> DIR &= ~(BIT6|BIT7);
@@ -265,4 +280,67 @@ void T32_INT1_IRQHandler()
     TIMER32_1->INTCLR = 1;      // Clear interrupt needs to happen first for some reason (unknown)
 
     result = ADC14->MEM[5];  //read conversion result, STORES TO MEM LOCATION 5
+}
+//Interupt function for Set Alarm and Set Time
+void PORT1_IRQHandler()
+{
+    //Button 1.6 is for SET ALARM
+    //Button 1.7 is for SET TIME
+    if(P1->IFG & BIT6)
+    {
+        P1 -> IFG &= ~BIT6; //clears interrupt
+        if(sethouralarm==0 && setminutealarm==0 && setsecondalarm==0)
+        {
+            //SET HOUR
+            sethouralarm=1;
+        }
+
+        if(sethouralarm==1 && setminutealarm==0 && setsecondalarm==0)
+        {
+            //SET MINUTE
+            setminutealarm=1;
+        }
+        if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==0)
+        {
+            //SET SECOND
+            setsecondalarm==1;
+        }
+        if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==1)
+        {
+            sethouralarm=0;
+            setminutealarm=0;
+            setsecondalarm=0;
+        }
+
+
+    }
+
+    //if(buttonP17_pressed())
+    if(P1->IFG & BIT7)
+    {
+        P1 -> IFG &= ~BIT6; //clears interrupt
+       if(sethouralarm==0 && setminutealarm==0 && setsecondalarm==0)
+       {
+           //SET HOUR
+           sethouralarm=1;
+       }
+       if(sethouralarm==1 && setminutealarm==0 && setsecondalarm==0)
+       {
+           //SET MINUTE
+           setminutealarm=1;
+       }
+       if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==0)
+       {
+           //SET SECOND
+           setsecondalarm==1;
+       }
+       if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==1)
+       {
+           sethouralarm=0;
+           setminutealarm=0;
+           setsecondalarm=0;
+       }
+
+    }
+
 }
