@@ -21,11 +21,16 @@ void pushByte(uint8_t byte);
 void commandWrite(uint8_t command);
 void dataWrite(uint8_t data);
 
-int hour=0;
-int minute=0;
-int second=0;
-char time;
+
+int houralarm=0;
+int minutealarm=0;
+int secondalarm=0;
+char timealarm= 'A';
 int result=0;
+int hourclock=0;
+int minuteclock=0;
+int secondclock=0;
+char timeclock= 'A';
 
 int alarmflag=0;
 int setalarmflag=0;
@@ -36,7 +41,6 @@ int setsecondalarm=0;
 int sethourtime=0;
 int setminutetime=0;
 int setsecondtime=0;
-
 enum states{
     DEFAULT,//Default state
     SETALARM,
@@ -313,23 +317,27 @@ void PORT1_IRQHandler()
         {
             //SET HOUR
             sethouralarm=1;
+            sethour();
         }
 
         if(sethouralarm==1 && setminutealarm==0 && setsecondalarm==0)
         {
             //SET MINUTE
             setminutealarm=1;
+            setminute();
         }
         if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==0)
         {
             //SET SECOND
             setsecondalarm==1;
+            setsecond();
         }
         if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==1)
         {
             sethouralarm=0;
             setminutealarm=0;
             setsecondalarm=0;
+            alarmflag=1;
         }
 
 
@@ -339,27 +347,131 @@ void PORT1_IRQHandler()
     if(P1->IFG & BIT7)
     {
         P1 -> IFG &= ~BIT6; //clears interrupt
-       if(sethouralarm==0 && setminutealarm==0 && setsecondalarm==0)
+       if(sethourtime==0 && setminutetime==0 && setsecondtime==0)
        {
            //SET HOUR
-           sethouralarm=1;
+           sethourtime=1;
+           sethour();
        }
-       if(sethouralarm==1 && setminutealarm==0 && setsecondalarm==0)
+       if(sethourtime==1 && setminutetime==0 && setsecondtime==0)
        {
            //SET MINUTE
-           setminutealarm=1;
+           setminutetime=1;
+           setminute();
        }
-       if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==0)
+       if(sethourtime==1 && setminutetime==1 && setsecondtime==0)
        {
            //SET SECOND
-           setsecondalarm==1;
+           setsecondtime==1;
+           setsecond();
        }
-       if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==1)
+       if(sethourtime==1 && setminutetime==1 && setsecondtime==1)
        {
-           sethouralarm=0;
-           setminutealarm=0;
-           setsecondalarm=0;
+           sethourtime=0;
+           setminutetime=0;
+           setsecondtime=0;
        }
+
+    }
+
+}
+
+void sethour(void)
+{
+    if(sethouralarm==1)
+    {
+        while(!((P1->IN & BIT6) == BIT6))
+        {
+            hour+=1;
+            if(hour==12)
+            {
+                if(alarmclock== 'A')
+                    alarmclock='P';
+                else if(alarmclock=='P')
+                    alarmclock= 'A';
+                delay_ms(300); //wait
+                hour=1;
+            }
+            delay_ms(300); //wait
+        }
+    }
+    if(sethourclock==1)
+    {
+        while(!((P1->IN & BIT7) == BIT7))
+        {
+            hour+=1;
+            if(hour==12)
+            {
+                if(alarmclock== 'A')
+                    alarmclock='P';
+                else if(alarmclock=='P')
+                    alarmclock= 'A';
+                delay_ms(300); //wait
+                hour=1;
+             }
+            delay_ms(300); //wait
+         }        
+    } 
+}
+
+void setminute(void)
+{
+    if(setminutealarm==1)
+        {
+            while(!((P1->IN & BIT6) == BIT6))
+            {
+                minute+=1;
+                if(minute==59)
+                {
+                    delay_ms(300); //wait
+                    minute=0;
+                }
+                delay_ms(300); //wait
+            }
+        }
+   if(sethourclock==1)
+   {
+       while(!((P1->IN & BIT7) == BIT7))
+       {
+           hour+=1;
+           if(hour==59)
+           {
+               delay_ms(300); //wait
+               minute=0;
+           }
+           delay_ms(300); //wait
+        }        
+   } 
+}
+void setsecond(void)
+{
+    if(setminutealarm==1)
+         {
+             while(!((P1->IN & BIT6) == BIT6))
+             {
+                 second+=1;
+                 if(second==59)
+                 {
+                     delay_ms(300); //wait
+                     second=0;
+                 }
+                 delay_ms(300); //wait
+             }
+         }
+    if(setsecondclock==1)
+    {
+        while(!((P1->IN & BIT7) == BIT7))
+        {
+            second+=1;
+            if(second==59)
+            {
+                delay_ms(300); //wait
+                second=0;
+            }
+            delay_ms(300); //wait
+         }        
+    } 
+}
 
     }
 
