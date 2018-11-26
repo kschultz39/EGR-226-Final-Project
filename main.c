@@ -92,15 +92,20 @@ void InitializeAll(void)
     P3->DIR |= (BIT2|BIT3); //sets P3.2 and P3.3 as OUTPUT
     //P3->OUT &= ~(BIT2|BIT3); //sets P3.2 and P3.3 to 0 for RS RW =0
 
-    P4->SEL0 &= ~(BIT4|BIT5|BIT6|BIT7); //sets (DB4-DB7) P4.4, P4.5, P4.5, P4.6, P4.7 as GPIO
-    P4->SEL1 &= ~(BIT4|BIT5|BIT6|BIT7);
-    P4->DIR |= (BIT4|BIT5|BIT6|BIT7); //sets pins 4.4-4.7 to OUTPUT
+
+            //LCD
+            P2->SEL0 &= ~(BIT4|BIT5|BIT6|BIT7); //sets (DB4-DB7) P2.4, P2.5, P2.5, P2.6, P2.7 as GPIO
+            P2->SEL1 &= ~(BIT4|BIT5|BIT6|BIT7);
+            P2->DIR |= (BIT4|BIT5|BIT6|BIT7); //sets pins 4.4-4.7 to OUTPUT
 
 
-    P6->SEL0 &=~BIT4; //sets P6.4 to GPIO (ENABLE PIN)
-    P6->SEL1 &=~BIT4; //sets P6.4 to GPIO (ENABLE PIN)
-    P6->DIR |= BIT4; //sets as output
-    P6->OUT &= ~BIT4; //sets Enable pin to 0 initially
+
+
+            P6->SEL0 &=~BIT4; //sets P6.4 to GPIO (ENABLE PIN)
+            P6->SEL1 &=~BIT4; //sets P6.4 to GPIO (ENABLE PIN)
+            P6->DIR |= BIT4; //sets as output
+            P6->OUT &= ~BIT4; //sets Enable pin to 0 initially
+
 
     LCD_init();
 
@@ -159,30 +164,40 @@ void LCD_init(void)
 {
     //P3->OUT &= ~BIT2;    //P3.2 is RS, set to 0 because sending command
 
-
-    commandWrite(0x03);   //3 in HEX
-    delay_ms(100);  //waits 100 ms
-    commandWrite(0x03);   //3 in HEX
-    delay_micro(200);   //waits 200 microseconds
-    commandWrite(0x03); //3 in HEX
-    delay_ms(100);  //waits 100 ms
+    //P3->OUT &= ~BIT2;    //P3.2 is RS, set to 0 because sending command
 
 
-    commandWrite(0x02); //2 in HEX
-    delay_micro(100); //waits 100 microseconds
-    commandWrite(0x02); //2 in HEX
-    delay_micro(100); ///waits 100 microseconds
 
 
-    commandWrite(0x08); //8 in HEX
-    delay_micro(100); //waits 100 microseconds
-    commandWrite(0x0F); //HEX 0F MOD
-    delay_micro(100); //waits 100 microseconds
-    commandWrite(0x01); //01 HEX
-    delay_micro(100); //waits 100 microseconds
-    commandWrite(0x06); //HEX 06
-    delay_ms(10); //waits 10 microseconds
+          commandWrite(0x03);   //3 in HEX
+          delay_ms(100);  //waits 100 ms
+          commandWrite(0x03);   //3 in HEX
+          delay_micro(200);   //waits 200 microseconds
+          commandWrite(0x03); //3 in HEX
+          delay_ms(100);  //waits 100 ms
 
+
+
+
+          commandWrite(0x02); //2 in HEX
+          delay_micro(100); //waits 100 microseconds
+          commandWrite(0x02); //2 in HEX
+          delay_micro(100); ///waits 100 microseconds
+
+
+
+
+          commandWrite(0x08); //8 in HEX
+          delay_micro(100); //waits 100 microseconds
+          commandWrite(0x0F); //HEX 0F MOD
+          delay_micro(100); //waits 100 microseconds
+          commandWrite(0x01); //01 HEX
+          delay_micro(100); //waits 100 microseconds
+          commandWrite(0x06); //HEX 06
+          delay_ms(10); //waits 10 microseconds
+
+
+          //INitialization complete according to Figure 4 in prelab
     //INitialization complete according to Figure 4 in prelab
 }
 
@@ -223,9 +238,9 @@ void PulseEnablePin(void)
 //Pushes 1 nibble onto the data pins and pulses the Enable pin
 void pushNibble (uint8_t nibble)
 {
-    P4->OUT &= ~(BIT4|BIT5|BIT6|BIT7); //clears values
-    P4->OUT |= ((nibble & 0x0F)<<4);
-   // delay_micro(100);
+    P2->OUT &= ~(BIT4|BIT5|BIT6|BIT7); //clears values
+         P2->OUT |= ((nibble & 0x0F)<<4);
+        // delay_micro(100);
 
     PulseEnablePin();
 }
@@ -235,33 +250,38 @@ void pushNibble (uint8_t nibble)
 void pushByte(uint8_t byte)
 {
     uint8_t temp;
-    temp= ((byte & 0xF0)>>4);
+           temp= ((byte & 0xF0)>>4);
 
-    //MOST SIGNIFICANT
-    pushNibble(temp);
 
-    //LEAST SIGNIFICANT
-    temp= (byte & 0x0F);
-    pushNibble(temp);
-    delay_micro(100);
+           //MOST SIGNIFICANT
+           pushNibble(temp);
+
+
+           //LEAST SIGNIFICANT
+           temp= (byte & 0x0F);
+           pushNibble(temp);
+           delay_micro(100);
+
 
 }
 //write one byte of COMMAND by calling the pushByte() function with the COMMAND parameter
 void commandWrite(uint8_t command)
 {
     //RW to zero
-    P3->OUT &= ~(BIT2); //pulls RS pin LOW (expects instructions)
+           P3->OUT &= ~(BIT2); //pulls RS pin LOW (expects instructions)
 
-    //RS to zero
-    P3 ->OUT &=~(BIT3);
-    pushByte(command);
-    delay_ms(100);
+
+           //RS to zero
+           P3 ->OUT &=~(BIT3);
+           pushByte(command);
+           delay_ms(100);
 }
 //writes one byte of DATA by calling the pushByte() function within the DATA parameter
 void dataWrite(uint8_t data)
 {
     P3->OUT |= BIT2; //pulls RS pin HIGH (expects data)
-    pushByte(data);
+          pushByte(data);
+
 
 
 }
