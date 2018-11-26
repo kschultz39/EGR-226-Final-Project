@@ -1,14 +1,18 @@
 #include "msp.h"
+#include "msp.h"
 #include "msp432.h"
 #include <stdio.h>
+#include "math.h"
+
+
 
 
 /**
  * main.c
  */
-void SysTick_Init(void);
-
 void InitializeAll(void);
+
+void SysTick_Init(void);
 void LCD_init(void);
 void delay_micro(unsigned microsec);
 void delay_ms (unsigned ms);
@@ -18,10 +22,49 @@ void pushByte(uint8_t byte);
 void commandWrite(uint8_t command);
 void dataWrite(uint8_t data);
 
+int hour=0;
+int minute=0;
+int second=0;
+char time;
+int result=0;
+
+
 void main(void)
 {
     InitializeAll();
-    
+    char buffer[50];
+    int i;
+
+
+    commandWrite(0x0F); //turn off blinking cursor
+    sprintf(buffer, "%d:%d:%d %cM                     ", hour, minute, second, time);
+    commandWrite(0x0C); //Prints to line 1 of LCD
+    for(i=0; i<16; i++)
+        dataWrite(buffer[i]);
+    commandWrite(0xC0); //Prints to line 2 of LCD
+
+    ADC14->CTL0 |= 1;  //Start conversion
+    while (!ADC14->IFGR0);  // wait till conversion completes  read is ADC14IFGRO
+    float voltage;
+    float Cheat;
+    float Fheat;
+
+    voltage = ((3.3 / 4096) * result);  //function that will convert 12-bit resolution output into a voltage reading depending on the position of the potentiometer
+
+    Cheat = ( ( ( voltage * 1000) - 500 ) / 10 );
+
+    Fheat = ((Cheat * (9.0/5.0)) + 32.0);
+
+    delay_ms(500);
+    sprintf(buffer, "      %.1f", Fheat);    //puts X value in the string of buffer through use of sprintf() function
+    for(i=0; i<10; i++)   //prints string with information about X in the first line
+        dataWrite(buffer[i]);
+    dataWrite('F');
+    delay_ms(300);
+
+
+
+
 
 }
 
@@ -45,6 +88,56 @@ void InitializeAll(void)
     P6->OUT &= ~BIT4; //sets Enable pin to 0 initially
 
     LCD_init();
+
+    //Pin enables for PWM LEDs (Referencing code from Zuidema In-class example Week 5 part 1)
+    P7->SEL0 |= (BIT4|BIT5|BIT6); //sets SEL0=1;
+    P7->SEL1 &= (BIT4|BIT5|BIT6);  //SEL1 = 0. Setting SEL0=1 and SEL1=0 activates PWM function
+    P7->DIR |= (BIT4|BIT5|BIT6);    // Set pins as  PWM output.
+    P7->OUT &= ~(BIT4|BIT5|BIT6);
+
+    //Timer A
+    TIMER_A1->CCR[0] = 999;  //1000 clocks = 0.333 ms.  This is the period of everything on Timer A1.  0.333 < 16.666 ms so the on/off shouldn't
+                                 //be visible with the human eye.  1000 makes easy math to calculate duty cycle.  No particular reason to use 1000.
+
+    TIMER_A1->CCTL[2] = 0b0000000011100000;  //reset / set compare.   Duty Cycle = CCR[1]/CCR[0].
+    TIMER_A1->CCR[2] = 0;  //P7.6 initialize to 0% duty cycle
+    TIMER_A1->CCTL[3] = 0b0000000011100000;
+    TIMER_A1->CCR[3] = 0;  //P7.5 intialize to 0% duty cycle
+    TIMER_A1->CCTL[4] = 0b0000000011100000;
+    TIMER_A1->CCR[4] = 0;  //7.4 0% duty cycle
+
+    //The next line turns on all of Timer A1.  None of the above will do anything until Timer A1 is started.
+    TIMER_A1->CTL = 0b0000001000010100;
+
+    //BUTTON INITIALIZATION
+    //BUTTON 1.6 and BUTTON 1.7 (Button 1.6 corresponds to Mode 1: 1 second alarm= 1 second real, Button 1.7 corresponds to Mode 2: 1 second alarm= 1 second real)
+    P1-> SEL0 &= ~(BIT6|BIT7);
+    P1 -> SEL1 &= ~(BIT6|BIT7);
+    P1 -> DIR &= ~(BIT6|BIT7);
+    P1 -> REN |= (BIT6|BIT7);
+    P1->OUT |= (BIT6|BIT7);
+    P1->IE |= (BIT6|BIT7);
+    P1->IES |= (BIT6|BIT7);
+
+    //Initialization for Temperature sensor
+    ADC14->CTL0 = 0x00000010;  // power on and disabled during configuration
+    ADC14->CTL0 |= 0x04080300; //S/H pulse mode, sysclk, 32 sample clock, software trigger
+    ADC14->CTL1 = 0x00000020;  //12-bit resolution, should we use 14 as specified in class?
+    ADC14->MCTL[5] = 5;        //A5 input, single-ended, Vref-AVCC
+
+    P5->SEL1 |= (BIT0);  //configure P5.0 for A5, this will then be attached to the 10k external Pot
+    P5->SEL0 |= (BIT0);
+
+    ADC14->CTL1 |= 0x00050000;  //convert for mem reg 5
+    ADC14->CTL0 |= 2;           //enable ADC after configuration
+
+    //Interrupt functions
+    TIMER32_1->CONTROL = 0b11101010;  // Periodic, Wrapping, Interrupt, Divide by 256, Enabled, 32bit
+    TIMER32_1->LOAD = 5860-1;  //0.25 seconds @ 3MHz
+
+    NVIC_EnableIRQ(T32_INT1_IRQn);
+    __enable_interrupt();
+
 }
 //This function goes through the entire initialization sequence as shown in Figure 4
 void LCD_init(void)
@@ -164,4 +257,12 @@ void SysTick_Init(void)
     SysTick -> LOAD= 0x00FFFFFF; //maximum reload value
     SysTick -> VAL= 0; //any write to current value clears it
     SysTick -> CTRL= 0x00000005; //enable SysTIck, CPU clk, no interrupts
+}
+
+//Interrupt function, set up to read conversion result 2 times a second (FOR TEMPERATURE SENSOR)
+void T32_INT1_IRQHandler()
+{
+    TIMER32_1->INTCLR = 1;      // Clear interrupt needs to happen first for some reason (unknown)
+
+    result = ADC14->MEM[5];  //read conversion result, STORES TO MEM LOCATION 5
 }
