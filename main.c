@@ -7,7 +7,11 @@
 
 
 /**
- * main.c
+ *Authors: Kelly Schultz and Nathan Gruber
+ *Instructors: Professor Zuidema
+ *Date: 11/28/18
+ *Assignment: Alarm Clock Project
+ * 
  */
 void InitializeAll(void);
 
