@@ -27,16 +27,10 @@ void configRTC(void);
 
 int alarmflag=0;
 int setalarmflag=0;
-int settimeflag=0;
+int setclockflag=0;
 
 
-int sethouralarm=0;
-int setminutealarm=0;
-int setsecondalarm=0;
 
-int sethourclock=0;
-int setminuteclock=0;
-int setsecondclock=0;
 
 int displayhour=0;
 int result=0;
@@ -449,62 +443,20 @@ void PORT1_IRQHandler()
     if(P1->IFG & BIT6)
     {
         P1 -> IFG &= ~BIT6; //clears interrupt
-        if(sethouralarm==0 && setminutealarm==0 && setsecondalarm==0)
-        {
-            //SET HOUR
-            sethouralarm=1;
-        }
-
-        if(sethouralarm==1 && setminutealarm==0 && setsecondalarm==0)
-        {
-            //SET MINUTE
-            setminutealarm=1;
-            setminute();
-        }
-        if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==0)
-        {
-            //SET SECOND
-            setsecondalarm==1;
-        }
-        if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==1)
-        {
-            sethouralarm=0;
-            setminutealarm=0;
-            setsecondalarm=0;
-        }
-
+        if(setalarmflag>=0 && setalarmflag<=3)
+            setalarmflag+=1;
+        else if(setalarmflag==3)
+            setalarmflag=0;
 
     }
-
     //if(buttonP17_pressed())
     if(P1->IFG & BIT7)
     {
         P1 -> IFG &= ~BIT6; //clears interrupt
-       if(sethouralarm==0 && setminutealarm==0 && setsecondalarm==0)
-       {
-           //SET HOUR
-           sethouralarm=1;
-           sethour();
-       }
-       if(sethouralarm==1 && setminutealarm==0 && setsecondalarm==0)
-       {
-           //SET MINUTE
-           setminutealarm=1;
-           setminute();
-       }
-       if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==0)
-       {
-           //SET SECOND
-           setsecondalarm==1;
-           setsecond();
-       }
-       if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==1)
-       {
-           sethouralarm=0;
-           setminutealarm=0;
-           setsecondalarm=0;
-       }
-
+        if(setalarmflag>=0 && setalarmflag<3)
+            setalarmflag+=1;
+        else if(setalarmflag==3)
+            setalarmflag=0;
     }
 
 
@@ -530,7 +482,7 @@ void RTC_C_IRQHandler()
 }
 void sethour(void)
  {
-    if(sethouralarm==1)
+    if(setalarmflag==1)
     {
         while(!((P1->IN & BIT6) == BIT6))
         {
@@ -556,7 +508,7 @@ void sethour(void)
             delay_ms(300); //wait
         }
     }
-    if(sethourclock==1)
+    if(setclockflag==1)
     {
         while(!((P1->IN & BIT7) == BIT7))
         {
@@ -584,7 +536,7 @@ void sethour(void)
 
 void setminute(void)
 {
-    if(setminutealarm==1)
+    if(setalarmflag==2)
     {
         while(!((P1->IN & BIT6) == BIT6))
         {
@@ -605,7 +557,7 @@ void setminute(void)
         }
     }
 
-   if(setminuteclock==1)
+   if(setclockflag==2)
    {
        while(!((P1->IN & BIT7) == BIT7))
        {
@@ -627,7 +579,7 @@ void setminute(void)
 }
 void setsecond(void)
 {
-    if(setsecondalarm==1)
+    if(setalarmflag==3)
     {
         while(!((P1->IN & BIT6) == BIT6))
         {
@@ -647,7 +599,7 @@ void setsecond(void)
         }
     }
 
-   if(setsecondclock==1)
+   if(setclockflag==3)
    {
        while(!((P1->IN & BIT7) == BIT7))
        {
@@ -681,5 +633,4 @@ void configRTC(void)
     RTC_C->ADOWDAY = 0;
     RTC_C->CTL0     = ((0xA500) | BIT5);
 
-}
 }
