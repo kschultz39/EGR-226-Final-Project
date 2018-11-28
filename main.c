@@ -149,6 +149,28 @@ while(1)
       for(i=0; i<16; i++)
           dataWrite(buffer[i]);
      //commandWrite(0xC0); //Prints to line 2 of LCD
+        
+           //TEMP SENSOR CODE
+      commandWrite(0xD0); //Prints to line 3 of LCD
+
+         ADC14->CTL0 |= 1;  //Start conversion
+         while (!ADC14->IFGR0);  // wait till conversion completes  read is ADC14IFGRO
+         float voltage;
+         float Cheat;
+         float Fheat;
+
+         voltage = ((3.3 / 4096) * result);  //function that will convert 12-bit resolution output into a voltage reading depending on the position of the potentiometer
+
+         Cheat = ( ( ( voltage * 1000) - 500 ) / 10 );
+
+         Fheat = ((Cheat * (9.0/5.0)) + 32.0);
+
+         printf("Fheat is %lf\n", Fheat);
+
+         sprintf(buffer, "      %.1f", Fheat);    //puts X value in the string of buffer through use of sprintf() function
+         for(i=0; i<10; i++)   //prints string with information about X in the first line
+             dataWrite(buffer[i]);
+         dataWrite('F');
     }
 
     if(alarm_update)
@@ -162,31 +184,31 @@ while(1)
 
 }
 
-    commandWrite(0x0F); //turn off blinking cursor
-    //sprintf(buffer, "%d:%d:%d %cM                     ", hour, minute, second, time);
-    commandWrite(0x0C); //Prints to line 1 of LCD
-    for(i=0; i<16; i++)
-        dataWrite(buffer[i]);
-    commandWrite(0xC0); //Prints to line 2 of LCD
+//     commandWrite(0x0F); //turn off blinking cursor
+//     //sprintf(buffer, "%d:%d:%d %cM                     ", hour, minute, second, time);
+//     commandWrite(0x0C); //Prints to line 1 of LCD
+//     for(i=0; i<16; i++)
+//         dataWrite(buffer[i]);
+//     commandWrite(0xC0); //Prints to line 2 of LCD
 
-    ADC14->CTL0 |= 1;  //Start conversion
-    while (!ADC14->IFGR0);  // wait till conversion completes  read is ADC14IFGRO
-    float voltage;
-    float Cheat;
-    float Fheat;
+//     ADC14->CTL0 |= 1;  //Start conversion
+//     while (!ADC14->IFGR0);  // wait till conversion completes  read is ADC14IFGRO
+//     float voltage;
+//     float Cheat;
+//     float Fheat;
 
-    voltage = ((3.3 / 4096) * result);  //function that will convert 12-bit resolution output into a voltage reading depending on the position of the potentiometer
+//     voltage = ((3.3 / 4096) * result);  //function that will convert 12-bit resolution output into a voltage reading depending on the position of the potentiometer
 
-    Cheat = ( ( ( voltage * 1000) - 500 ) / 10 );
+//     Cheat = ( ( ( voltage * 1000) - 500 ) / 10 );
 
-    Fheat = ((Cheat * (9.0/5.0)) + 32.0);
+//     Fheat = ((Cheat * (9.0/5.0)) + 32.0);
 
-    delay_ms(500);
-    sprintf(buffer, "      %.1f", Fheat);    //puts X value in the string of buffer through use of sprintf() function
-    for(i=0; i<10; i++)   //prints string with information about X in the first line
-        dataWrite(buffer[i]);
-    dataWrite('F');
-    delay_ms(300);
+//     delay_ms(500);
+//     sprintf(buffer, "      %.1f", Fheat);    //puts X value in the string of buffer through use of sprintf() function
+//     for(i=0; i<10; i++)   //prints string with information about X in the first line
+//         dataWrite(buffer[i]);
+//     dataWrite('F');
+//     delay_ms(300);
 
 
 
