@@ -137,7 +137,7 @@ while(1)
             displayhour=(clock.hour);
 
 
-        printf("%02d:%02d:%02d\n", displayhour, mins, secs);
+        printf("%02d:%02d:%02d %cM\n", displayhour, clock.minute, clock.second, clock.daynight);
        commandWrite(0x0F); //turn off blinking cursor
         commandWrite(0x0C);
                       commandWrite(0xC0);  //moves the cursor to the second
@@ -270,6 +270,15 @@ void InitializeAll(void)
     P1->OUT |= (BIT6|BIT7);
     P1->IE |= (BIT6|BIT7);
     P1->IES |= (BIT6|BIT7);
+    
+        //BUTTON INITIALIZATION FOR ON/OFF/UP and SNOOZE/DOWN
+    P5-> SEL0 &= ~(BIT1|BIT2);
+    P5 -> SEL1 &= ~(BIT1|BIT2);
+    P5 -> DIR &= ~(BIT1|BIT2);
+    P5 -> REN |= (BIT1|BIT2);
+    P5->OUT |= (BIT1|BIT2);
+//    P5->IE |= (BIT1|BIT2);
+//    P5->IES |= (BIT1|BIT2);
 
     //Initialization for Temperature sensor
     ADC14->CTL0 = 0x00000010;  // power on and disabled during configuration
