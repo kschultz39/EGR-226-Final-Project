@@ -141,7 +141,7 @@ while(1)
             displayhour=(clock.hour);
 
 
-        printf("%02d:%02d:%02d\n", displayhour, mins, secs);
+        printf("%02d:%02d:%02d %cM\n", displayhour, clock.minute, clock.second, clock.daynight);
        commandWrite(0x0F); //turn off blinking cursor
         commandWrite(0x0C);
                       commandWrite(0xC0);  //moves the cursor to the second
