@@ -91,6 +91,8 @@ void main(void)
     int i;
     //int seconds;
 
+    clock.daynight= 'A';
+
 
 
 
@@ -133,10 +135,10 @@ while(1)
 
     if(time_update){
         time_update = 0;
-        if(hours>12)
-            displayhour=clock.hour-(12);
+        if(clock.hour>12)
+            displayhour=(clock.hour)-(12);
         else
-            displayhour=clock.hour;
+            displayhour=(clock.hour);
 
 
         printf("%02d:%02d:%02d\n", displayhour, mins, secs);
@@ -149,7 +151,7 @@ while(1)
       for(i=0; i<16; i++)
           dataWrite(buffer[i]);
      //commandWrite(0xC0); //Prints to line 2 of LCD
-        
+
            //TEMP SENSOR CODE
       commandWrite(0xD0); //Prints to line 3 of LCD
 
