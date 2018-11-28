@@ -21,16 +21,11 @@ void pushByte(uint8_t byte);
 void commandWrite(uint8_t command);
 void dataWrite(uint8_t data);
 
-
-int houralarm=0;
-int minutealarm=0;
-int secondalarm=0;
-char timealarm= 'A';
+int hour=0;
+int minute=0;
+int second=0;
+char time;
 int result=0;
-int hourclock=0;
-int minuteclock=0;
-int secondclock=0;
-char timeclock= 'A';
 
 int alarmflag=0;
 int setalarmflag=0;
@@ -41,6 +36,26 @@ int setsecondalarm=0;
 int sethourtime=0;
 int setminutetime=0;
 int setsecondtime=0;
+
+//Alarm Clock Tones
+#define F4 349.23
+#define F4SHARP 369.99
+
+//Defining the lengths of notes
+#define QUARTER 1000000
+#define QUARTERPLUS 1500000
+
+#define MAX_NOTE 1000 // How many notes are in the song matrix
+
+void SetupTimer32s();
+
+int note = 0;       //The note in the music sequence we are on
+int breath = 0;     //Take a breath after each note.  This creates seperation
+
+//FOR TIME FROM ZUIDEMA
+int time_update = 0, alarm_update = 0;
+   uint8_t hours, mins, secs;
+
 enum states{
     DEFAULT,//Default state
     SETALARM,
@@ -52,10 +67,74 @@ void main(void)
     InitializeAll();
     char buffer[50];
     int i;
+    //int seconds;
 
+
+
+
+
+//
+//
+//    //TIMER 32 COUNT DOWN IN SECONDS
+//    TIMER32_1->CONTROL = 0b11101010;  // Periodic, Wrapping, Interrupt, Divide by 256, Enabled, 32bit
+//        TIMER32_1->LOAD = 703200-1;  //0.25 seconds @ 3MHz * 4 = 1 sec * 60 = 703200 for 60 seconds
+//        seconds = TIMER32_1->LOAD;
+//        second = (seconds / 11720);
+//    //    TIMER32_1->LOAD = 1012500000-1;  //24 hours @ 3 MHz
+//        NVIC_EnableIRQ(T32_INT1_IRQn);
+//        __enable_interrupt();
+
+    //RTC CODE FROM LECTURE
+ RTC_C->CTL0 = (0xA500) ;
+RTC_C->CTL13 = 0;
+    //initialize time to 2:45 pm
+    //RTC_C->TIM0 = 0x2000; //45 min, 0 sec
+    RTC_C->TIM0 = 45 << 8 | 55; //45 min, 0 seconds
+    RTC_C->TIM1 = 1 << 8 | 14;
+    RTC_C->YEAR = 2018;
+    //Alarm set at 2:45 om
+    RTC_C->AMINHR = 14 << 8 | 46 | BIT(15) | BIT(7); //bit 15 adn 7 are alarm enable bits
+    RTC_C->ADOWDAY = 0;
+    RTC_C->PS1CTL = 0b11010; //1 second interrupt
+
+    RTC_C->CTL0 = (0xA500) | BIT5;
+    RTC_C-> CTL13 = 0;
+    NVIC_EnableIRQ(RTC_C_IRQn);
+
+
+
+
+
+while(1)
+{
+
+
+    if(time_update){
+        time_update = 0;
+
+        printf("%02d:%02d:%02d\n", hours, mins, secs);
+       commandWrite(0x0F); //turn off blinking cursor
+        commandWrite(0x0C);
+                      commandWrite(0xC0);  //moves the cursor to the second
+                      delay_ms(500);
+        sprintf(buffer, "%02d:%02d:%02d %cM                     ", hours, mins, secs, time);
+      // commandWrite(0x0C); //Prints to line 1 of LCD
+      for(i=0; i<16; i++)
+          dataWrite(buffer[i]);
+     //commandWrite(0xC0); //Prints to line 2 of LCD
+    }
+
+    if(alarm_update)
+    {
+        printf("ALARM\n");
+        alarm_update = 0;
+
+    }
+
+}
 
     commandWrite(0x0F); //turn off blinking cursor
-    sprintf(buffer, "%d:%d:%d %cM                     ", hourclock, minuteclock, secondclock, timeclock);
+    //sprintf(buffer, "%d:%d:%d %cM                     ", hour, minute, second, time);
     commandWrite(0x0C); //Prints to line 1 of LCD
     for(i=0; i<16; i++)
         dataWrite(buffer[i]);
@@ -303,6 +382,8 @@ void T32_INT1_IRQHandler()
 {
     TIMER32_1->INTCLR = 1;      // Clear interrupt needs to happen first for some reason (unknown)
 
+// add to seconds
+
     result = ADC14->MEM[5];  //read conversion result, STORES TO MEM LOCATION 5
 }
 //Interupt function for Set Alarm and Set Time
@@ -317,27 +398,23 @@ void PORT1_IRQHandler()
         {
             //SET HOUR
             sethouralarm=1;
-            sethour();
         }
 
         if(sethouralarm==1 && setminutealarm==0 && setsecondalarm==0)
         {
             //SET MINUTE
             setminutealarm=1;
-            setminute();
         }
         if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==0)
         {
             //SET SECOND
             setsecondalarm==1;
-            setsecond();
         }
         if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==1)
         {
             sethouralarm=0;
             setminutealarm=0;
             setsecondalarm=0;
-            alarmflag=1;
         }
 
 
@@ -347,128 +424,48 @@ void PORT1_IRQHandler()
     if(P1->IFG & BIT7)
     {
         P1 -> IFG &= ~BIT6; //clears interrupt
-       if(sethourtime==0 && setminutetime==0 && setsecondtime==0)
+       if(sethouralarm==0 && setminutealarm==0 && setsecondalarm==0)
        {
            //SET HOUR
-           sethourtime=1;
-           sethour();
+           sethouralarm=1;
        }
-       if(sethourtime==1 && setminutetime==0 && setsecondtime==0)
+       if(sethouralarm==1 && setminutealarm==0 && setsecondalarm==0)
        {
            //SET MINUTE
-           setminutetime=1;
-           setminute();
+           setminutealarm=1;
        }
-       if(sethourtime==1 && setminutetime==1 && setsecondtime==0)
+       if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==0)
        {
            //SET SECOND
-           setsecondtime==1;
-           setsecond();
+           setsecondalarm==1;
        }
-       if(sethourtime==1 && setminutetime==1 && setsecondtime==1)
+       if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==1)
        {
-           sethourtime=0;
-           setminutetime=0;
-           setsecondtime=0;
+           sethouralarm=0;
+           setminutealarm=0;
+           setsecondalarm=0;
        }
 
     }
 
+
 }
 
-void sethour(void)
+void RTC_C_IRQHandler()
 {
-    if(sethouralarm==1)
+    if(RTC_C->PS1CTL & BIT0)
     {
-        while(!((P1->IN & BIT6) == BIT6))
-        {
-            houralarm+=1;
-            if(houralarm==12)
-            {
-                if(timealarm== 'A')
-                    timealarm='P';
-                else if(timealarm=='P')
-                    timealarm= 'A';
-                delay_ms(300); //wait
-                houralarm=1;
-            }
-            delay_ms(300); //wait
-        }
+        time_update = 1;
+        hours = RTC_C->TIM1 & 0x00FF;
+        mins = (RTC_C->TIM0 & 0xFF00) >> 8;
+        secs = RTC_C->TIM0 & 0x00FF;
+        RTC_C->PS1CTL &= ~BIT0;
     }
-    if(sethourtime==1)
-    {
-        while(!((P1->IN & BIT7) == BIT7))
-        {
-            hourclock+=1;
-            if(hourclock==12)
-            {
-                if(timeclock== 'A')
-                    timeclock='P';
-                else if(timeclock=='P')
-                    timeclock= 'A';
-                delay_ms(300); //wait
-                hourclock=1;
-             }
-            delay_ms(300); //wait
-         }
-    }
-}
 
-void setminute(void)
-{
-    if(setminutealarm==1)
-        {
-            while(!((P1->IN & BIT6) == BIT6))
-            {
-                minutealarm+=1;
-                if(minutealarm==59)
-                {
-                    delay_ms(300); //wait
-                    minutealarm=0;
-                }
-                delay_ms(300); //wait
-            }
-        }
-   if(sethourtime==1)
-   {
-       while(!((P1->IN & BIT7) == BIT7))
-       {
-           hourclock+=1;
-           if(hourclock==59)
-           {
-               delay_ms(300); //wait
-               hourclock=0;
-           }
-           delay_ms(300); //wait
-        }
-   }
-}
-void setsecond(void)
-{
-    if(setminutealarm==1)
-         {
-             while(!((P1->IN & BIT6) == BIT6))
-             {
-                 secondalarm+=1;
-                 if(secondalarm==59)
-                 {
-                     delay_ms(300); //wait
-                     secondalarm=0;
-                 }
-                 delay_ms(300); //wait
-             }
-         }
-    if(setsecondtime==1)
+    if(RTC_C->CTL0 & BIT1)
     {
-        while(!((P1->IN & BIT7) == BIT7))
-        {
-            secondclock+=1;
-            if(secondclock==59)
-            {
-                delay_ms(300); //wait
-                secondclock=0;
-            }
-            delay_ms(300); //wait
-         }
+
+        alarm_update = 1;
+        RTC_C->CTL0 = (0xA500) | BIT5;
     }
 }
