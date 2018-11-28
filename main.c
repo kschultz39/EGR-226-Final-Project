@@ -73,7 +73,7 @@ void main(void)
 
 
 
-//
+//PROFESSOR SUGGESTED WE USE THIS LATER POSSIBLY
 //
 //    //TIMER 32 COUNT DOWN IN SECONDS
 //    TIMER32_1->CONTROL = 0b11101010;  // Periodic, Wrapping, Interrupt, Divide by 256, Enabled, 32bit
@@ -155,6 +155,7 @@ while(1)
 
 }
 
+//     INITIAL CODE FOR CLOCK
 //     commandWrite(0x0F); //turn off blinking cursor
 //     //sprintf(buffer, "%d:%d:%d %cM                     ", hour, minute, second, time);
 //     commandWrite(0x0C); //Prints to line 1 of LCD
