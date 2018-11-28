@@ -21,21 +21,43 @@ void pushByte(uint8_t byte);
 void commandWrite(uint8_t command);
 void dataWrite(uint8_t data);
 
-int hour=0;
-int minute=0;
-int second=0;
-char time;
-int result=0;
+
 
 int alarmflag=0;
 int setalarmflag=0;
 int settimeflag=0;
+
+
 int sethouralarm=0;
 int setminutealarm=0;
 int setsecondalarm=0;
-int sethourtime=0;
-int setminutetime=0;
-int setsecondtime=0;
+
+int sethourclock=0;
+int setminuteclock=0;
+int setsecondclock=0;
+
+int displayhour=0;
+int result=0;
+
+// global struct variable called clock
+struct
+{
+    uint8_t second;
+    uint8_t minute;
+    uint8_t hour;
+    char daynight;
+} clock;
+
+// global struct variable called alarm
+struct
+{
+    uint8_t second;
+    uint8_t minute;
+    uint8_t hour;
+    char daynight;
+} alarm;
+
+
 
 //Alarm Clock Tones
 #define F4 349.23
@@ -73,7 +95,7 @@ void main(void)
 
 
 
-//PROFESSOR SUGGESTED WE USE THIS LATER POSSIBLY
+//
 //
 //    //TIMER 32 COUNT DOWN IN SECONDS
 //    TIMER32_1->CONTROL = 0b11101010;  // Periodic, Wrapping, Interrupt, Divide by 256, Enabled, 32bit
@@ -108,42 +130,25 @@ RTC_C->CTL13 = 0;
 while(1)
 {
 
-////////CLOCK CODE
+
     if(time_update){
         time_update = 0;
+        if(hours>12)
+            displayhour=clock.hour-(12);
+        else
+            displayhour=clock.hour;
 
-        printf("%02d:%02d:%02d\n", hours, mins, secs);
+
+        printf("%02d:%02d:%02d\n", displayhour, mins, secs);
        commandWrite(0x0F); //turn off blinking cursor
         commandWrite(0x0C);
                       commandWrite(0xC0);  //moves the cursor to the second
                       delay_ms(500);
-        sprintf(buffer, "%02d:%02d:%02d %cM                     ", hours, mins, secs, time);
+        sprintf(buffer, "%d:%02d:%02d %cM                     ", displayhour, clock.minute, clock.second, clock.daynight);
       // commandWrite(0x0C); //Prints to line 1 of LCD
       for(i=0; i<16; i++)
           dataWrite(buffer[i]);
      //commandWrite(0xC0); //Prints to line 2 of LCD
-       
-////////TEMP SENSOR CODE
-      commandWrite(0xD0); //Prints to line 3 of LCD
-
-         ADC14->CTL0 |= 1;  //Start conversion
-         while (!ADC14->IFGR0);  // wait till conversion completes  read is ADC14IFGRO
-         float voltage;
-         float Cheat;
-         float Fheat;
-
-         voltage = ((3.3 / 4096) * result);  //function that will convert 12-bit resolution output into a voltage reading depending on the position of the potentiometer
-
-         Cheat = ( ( ( voltage * 1000) - 500 ) / 10 );
-
-         Fheat = ((Cheat * (9.0/5.0)) + 32.0);
-
-         printf("Fheat is %lf\n", Fheat);
-
-         sprintf(buffer, "      %.1f", Fheat);    //puts X value in the string of buffer through use of sprintf() function
-         for(i=0; i<10; i++)   //prints string with information about X in the first line
-             dataWrite(buffer[i]);
-         dataWrite('F');
     }
 
     if(alarm_update)
@@ -153,34 +158,35 @@ while(1)
 
     }
 
+
+
 }
 
-//     INITIAL CODE FOR CLOCK
-//     commandWrite(0x0F); //turn off blinking cursor
-//     //sprintf(buffer, "%d:%d:%d %cM                     ", hour, minute, second, time);
-//     commandWrite(0x0C); //Prints to line 1 of LCD
-//     for(i=0; i<16; i++)
-//         dataWrite(buffer[i]);
-//     commandWrite(0xC0); //Prints to line 2 of LCD
+    commandWrite(0x0F); //turn off blinking cursor
+    //sprintf(buffer, "%d:%d:%d %cM                     ", hour, minute, second, time);
+    commandWrite(0x0C); //Prints to line 1 of LCD
+    for(i=0; i<16; i++)
+        dataWrite(buffer[i]);
+    commandWrite(0xC0); //Prints to line 2 of LCD
 
-//     ADC14->CTL0 |= 1;  //Start conversion
-//     while (!ADC14->IFGR0);  // wait till conversion completes  read is ADC14IFGRO
-//     float voltage;
-//     float Cheat;
-//     float Fheat;
+    ADC14->CTL0 |= 1;  //Start conversion
+    while (!ADC14->IFGR0);  // wait till conversion completes  read is ADC14IFGRO
+    float voltage;
+    float Cheat;
+    float Fheat;
 
-//     voltage = ((3.3 / 4096) * result);  //function that will convert 12-bit resolution output into a voltage reading depending on the position of the potentiometer
+    voltage = ((3.3 / 4096) * result);  //function that will convert 12-bit resolution output into a voltage reading depending on the position of the potentiometer
 
-//     Cheat = ( ( ( voltage * 1000) - 500 ) / 10 );
+    Cheat = ( ( ( voltage * 1000) - 500 ) / 10 );
 
-//     Fheat = ((Cheat * (9.0/5.0)) + 32.0);
+    Fheat = ((Cheat * (9.0/5.0)) + 32.0);
 
-//     delay_ms(500);
-//     sprintf(buffer, "      %.1f", Fheat);    //puts X value in the string of buffer through use of sprintf() function
-//     for(i=0; i<10; i++)   //prints string with information about X in the first line
-//         dataWrite(buffer[i]);
-//     dataWrite('F');
-//     delay_ms(300);
+    delay_ms(500);
+    sprintf(buffer, "      %.1f", Fheat);    //puts X value in the string of buffer through use of sprintf() function
+    for(i=0; i<10; i++)   //prints string with information about X in the first line
+        dataWrite(buffer[i]);
+    dataWrite('F');
+    delay_ms(300);
 
 
 
@@ -427,6 +433,7 @@ void PORT1_IRQHandler()
         {
             //SET MINUTE
             setminutealarm=1;
+            setminute();
         }
         if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==0)
         {
@@ -451,16 +458,19 @@ void PORT1_IRQHandler()
        {
            //SET HOUR
            sethouralarm=1;
+           sethour();
        }
        if(sethouralarm==1 && setminutealarm==0 && setsecondalarm==0)
        {
            //SET MINUTE
            setminutealarm=1;
+           setminute();
        }
        if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==0)
        {
            //SET SECOND
            setsecondalarm==1;
+           setsecond();
        }
        if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==1)
        {
@@ -479,9 +489,9 @@ void RTC_C_IRQHandler()
     if(RTC_C->PS1CTL & BIT0)
     {
         time_update = 1;
-        hours = RTC_C->TIM1 & 0x00FF;
-        mins = (RTC_C->TIM0 & 0xFF00) >> 8;
-        secs = RTC_C->TIM0 & 0x00FF;
+        clock.hour = RTC_C->TIM1 & 0x00FF;
+        clock.minute = (RTC_C->TIM0 & 0xFF00) >> 8;
+        clock.second = RTC_C->TIM0 & 0x00FF;
         RTC_C->PS1CTL &= ~BIT0;
     }
 
@@ -491,4 +501,121 @@ void RTC_C_IRQHandler()
         alarm_update = 1;
         RTC_C->CTL0 = (0xA500) | BIT5;
     }
+}
+void sethour(void)
+ {
+    if(sethouralarm==1)
+    {
+        while(!((P1->IN & BIT6) == BIT6))
+        {
+            alarm.hour+=1;
+            if(alarm.hour==12)
+                alarm.hour+=1;
+            if(alarm.hour==12)
+            {
+                if(alarm.daynight== 'A')
+                    alarm.daynight='P';
+                else if(alarm.daynight=='P')
+                    alarm.daynight= 'A';
+                delay_ms(300); //wait
+               alarm.hour=1;
+            }
+            delay_ms(300); //wait
+        }
+    }
+    if(sethourclock==1)
+    {
+        while(!((P1->IN & BIT7) == BIT7))
+        {
+            clock.hour+=1;
+            if(clock.hour==12)
+               clock.hour+=1;
+            if(clock.hour==12)
+            {
+                if(clock.daynight== 'A')
+                    clock.daynight='P';
+                else if(clock.daynight=='P')
+                    clock.daynight= 'A';
+
+                delay_ms(300); //wait
+                clock.hour=1;
+
+             }
+            delay_ms(300); //wait
+         }
+    }
+}
+
+void setminute(void)
+{
+    if(setminutealarm==1)
+    {
+        while(!((P1->IN & BIT6) == BIT6))
+        {
+            alarm.minute+=1;
+            if(alarm.minute!=59)
+                alarm.minute+=1;
+            if(alarm.minute==59)
+            {
+                delay_ms(300); //wait
+                alarm.minute=0;
+                alarm.minute=0;
+                alarm.hour+=1;
+            }
+            delay_ms(300); //wait
+        }
+    }
+
+   if(setminuteclock==1)
+   {
+       while(!((P1->IN & BIT7) == BIT7))
+       {
+           clock.minute+=1;
+           if(clock.minute!=59)
+               clock.minute+=1;
+           if(clock.minute==59)
+           {
+               delay_ms(300); //wait
+               clock.minute=0;
+               clock.minute+=1;
+           }
+           delay_ms(300); //wait
+        }
+   }
+}
+void setsecond(void)
+{
+    if(setsecondalarm==1)
+    {
+        while(!((P1->IN & BIT6) == BIT6))
+        {
+            alarm.second+=1;
+            if(alarm.second!=59)
+                alarm.second+=1;
+            if(alarm.second==59)
+            {
+                delay_ms(300); //wait
+                alarm.second=0; //if it goes to 00 seconds
+                alarm.minute+=1; //it should be incremented by a minute
+            }
+            delay_ms(300); //wait
+        }
+    }
+
+   if(setsecondclock==1)
+   {
+       while(!((P1->IN & BIT7) == BIT7))
+       {
+           clock.second+=1;
+           if(clock.second!=59)
+               clock.second+=1;
+           if(clock.second==59)
+           {
+               delay_ms(300); //wait
+               clock.second=0;
+               clock.minute+=1;
+           }
+           delay_ms(300); //wait
+        }
+   }
 }
