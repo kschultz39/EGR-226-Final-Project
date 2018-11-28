@@ -21,6 +21,8 @@ void pushByte(uint8_t byte);
 void commandWrite(uint8_t command);
 void dataWrite(uint8_t data);
 
+void configRTC(void);
+
 
 
 int alarmflag=0;
@@ -141,7 +143,7 @@ while(1)
             displayhour=(clock.hour);
 
 
-        printf("%02d:%02d:%02d %cM\n", displayhour, clock.minute, clock.second, clock.daynight);
+        printf("%02d:%02d:%02d\n", displayhour, mins, secs);
        commandWrite(0x0F); //turn off blinking cursor
         commandWrite(0x0C);
                       commandWrite(0xC0);  //moves the cursor to the second
@@ -534,16 +536,23 @@ void sethour(void)
         {
             alarm.hour+=1;
             if(alarm.hour==12)
+                {
                 alarm.hour+=1;
+                configRTC();
+                }
             if(alarm.hour==12)
             {
                 if(alarm.daynight== 'A')
                     alarm.daynight='P';
                 else if(alarm.daynight=='P')
+                    {
                     alarm.daynight= 'A';
+                    }
+                configRTC();
                 delay_ms(300); //wait
                alarm.hour=1;
             }
+
             delay_ms(300); //wait
         }
     }
@@ -553,14 +562,17 @@ void sethour(void)
         {
             clock.hour+=1;
             if(clock.hour==12)
-               clock.hour+=1;
+               {clock.hour+=1;
+               configRTC();
+               }
+            configRTC();
             if(clock.hour==12)
             {
                 if(clock.daynight== 'A')
                     clock.daynight='P';
                 else if(clock.daynight=='P')
                     clock.daynight= 'A';
-
+                configRTC();
                 delay_ms(300); //wait
                 clock.hour=1;
 
@@ -578,13 +590,16 @@ void setminute(void)
         {
             alarm.minute+=1;
             if(alarm.minute!=59)
-                alarm.minute+=1;
+            { alarm.minute+=1;
+            configRTC();
+            }
             if(alarm.minute==59)
             {
                 delay_ms(300); //wait
                 alarm.minute=0;
                 alarm.minute=0;
                 alarm.hour+=1;
+                configRTC();
             }
             delay_ms(300); //wait
         }
@@ -596,12 +611,15 @@ void setminute(void)
        {
            clock.minute+=1;
            if(clock.minute!=59)
-               clock.minute+=1;
+               {clock.minute+=1;
+               configRTC();
+               }
            if(clock.minute==59)
            {
                delay_ms(300); //wait
                clock.minute=0;
                clock.minute+=1;
+               configRTC();
            }
            delay_ms(300); //wait
         }
@@ -615,12 +633,15 @@ void setsecond(void)
         {
             alarm.second+=1;
             if(alarm.second!=59)
-                alarm.second+=1;
+                {alarm.second+=1;
+                configRTC();
+                }
             if(alarm.second==59)
             {
                 delay_ms(300); //wait
                 alarm.second=0; //if it goes to 00 seconds
                 alarm.minute+=1; //it should be incremented by a minute
+                configRTC();
             }
             delay_ms(300); //wait
         }
@@ -632,14 +653,33 @@ void setsecond(void)
        {
            clock.second+=1;
            if(clock.second!=59)
-               clock.second+=1;
+               {clock.second+=1;
+               configRTC();
+               }
            if(clock.second==59)
            {
                delay_ms(300); //wait
                clock.second=0;
                clock.minute+=1;
+               configRTC();
            }
            delay_ms(300); //wait
         }
    }
+}
+
+void configRTC(void)
+{
+    RTC_C->CTL0     =   0xA500;     //Write Code, IE on RTC Ready
+    RTC_C->CTL13    =   0x0000;
+    RTC_C->TIM0     = (clock.minute)<<8 | (clock.second); //minutes, seconds
+    RTC_C->TIM1     = (clock.hour)<<8 | 12;
+
+    RTC_C->PS1CTL   = 0b11010;
+
+    RTC_C->AMINHR   = 12<<8 | 31 | BIT(15) | BIT(7);
+    RTC_C->ADOWDAY = 0;
+    RTC_C->CTL0     = ((0xA500) | BIT5);
+
+}
 }
