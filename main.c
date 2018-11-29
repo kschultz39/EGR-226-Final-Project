@@ -3,7 +3,7 @@
  *Instructors: Professor Zuidema
  *Date: 11/28/18
  *Assignment: Alarm Clock Project
- * 
+ *
  */
 #include "msp.h"
 #include "msp432.h"
@@ -50,7 +50,6 @@ enum states
     SETSECONDCLOCK,
     SETHOURALARM,
     SETMINUTEALARM,
-    SETSECONDALARM,
 };
 
 // global struct variable called clock
@@ -65,7 +64,6 @@ struct
 // global struct variable called alarm
 struct
 {
-  uint8_t second;
   uint8_t minute;
   uint8_t hour;
   char daynight;
@@ -203,12 +201,6 @@ enum states state= DEFAULT;
           setminute();
           setflag=0;
           if(setflag==1)
-              state= SETSECONDALARM;
-          break;
-      case SETSECONDALARM:
-          setsecond();
-          setflag=0;
-          if(setflag==1)
               state= DEFAULT;
           break;
       case SETHOURCLOCK:
@@ -222,7 +214,7 @@ enum states state= DEFAULT;
           setminute();
           setflag=0;
           if(setflag==2)
-              state= SETSECONDALARM;
+              state= SETSECONDCLOCK;
           break;
       case SETSECONDCLOCK:
           setsecond();
@@ -546,157 +538,123 @@ void sethour(void)
 {
   if (setflag == 1)
   {
-      RTC_C->CTL0     =   0xA500;     //Write Code, IE on RTC Ready
-        RTC_C->CTL13    =   0x0000;
-        RTC_C->TIM0     = 0 << 8 | 0; //minutes, seconds
-        RTC_C->TIM1     = 0 << 8 | 12;
-        RTC_C->PS1CTL   = 0b11010;
-        RTC_C->AMINHR   = 0 << 8 | 0 | BIT(15) | BIT(7);
-        RTC_C->ADOWDAY = 0;
-        RTC_C->CTL0     = ((0xA500) | BIT5);
-
     if (!((P5->IN & BIT1) == BIT1))
     {
-      alarm.hour += 1;
-      if (alarm.hour == 12)
+
+      if (alarm.hour == 23)
       {
-        alarm.hour += 1;
-        configRTC();
+        alarm.hour= 0;
+        alarm.daynight = 'A';
       }
+
       if (alarm.hour == 12)
       {
-        if (alarm.daynight == 'A')
           alarm.daynight = 'P';
-        else if (alarm.daynight == 'P')
-        {
-          alarm.daynight = 'A';
-        }
-        configRTC();
         //delay_ms(300); //wait
         alarm.hour = 1;
       }
-
+      else
+          alarm.hour += 1;
+      configRTC();
       //delay_ms(300); //wait
     }
     if (!((P5->IN & BIT2) == BIT2))
     {
-      alarm.hour -= 1;
-      if (alarm.hour != 0)
-      { alarm.hour -= 1;
-        configRTC();
-      }
-      if (alarm.hour == 1)
+
+      if (alarm.hour == 0)
       {
         configRTC();
-        alarm.hour = 12;
-        if (alarm.daynight == 'A')
-          alarm.daynight = 'P';
-        else if (alarm.daynight == 'P')
-        {
+        alarm.hour = 23;
+        alarm.daynight = 'P';
+      if(alarm.hour==11)
+      {
           alarm.daynight = 'A';
         }
 
-
-
       }
       //delay_ms(300); //wait
+      else
+          alarm.hour -= 1;
+      configRTC();
     }
   }
   if (setflag == 2)
   {
-    if (!((P5->IN & BIT1) == BIT1))
-    {
-      clock.hour += 1;
-      if (clock.hour != 24)
-      { clock.hour += 1;
+      if (!((P5->IN & BIT1) == BIT1))
+          {
 
-      }
-      configRTC();
-      if (clock.hour == 24)
-      {
-          clock.hour=0;
-          clock.daynight= 'A';
+            if (clock.hour == 23)
+            {
+              clock.hour= 0;
+              clock.daynight = 'A';
+            }
 
-      }
-      if(clock.hour==12)
-      {
-          clock.daynight='P';
-      }
+            if (clock.hour == 12)
+            {
+                clock.daynight = 'P';
+              clock.hour = 1;
+            }
+            else
+                clock.hour += 1;
+            configRTC();
 
+          }
+          if (!((P5->IN & BIT2) == BIT2))
+          {
 
-        configRTC();
-       // delay_ms(300); //wait
-
-
-      }
-      //delay_ms(300); //wait
-    }
-    if (!((P5->IN & BIT2) == BIT2))
-    {
-        clock.hour -= 1;
-              if (clock.hour != 0)
-              { clock.hour -= 1;
-
+            if (alarm.hour == 0)
+            {
+              alarm.hour = 23;
+              alarm.daynight = 'P';
+            }
+            if(alarm.hour==11)
+            {
+                alarm.daynight = 'A';
               }
-              configRTC();
-              if (clock.hour == 0)
-              {
-                  clock.hour=0;
-                  clock.daynight= 'P';
-
-              }
-              if(clock.hour==12)
-              {
-                  clock.daynight='A';
-              }
+            else
+                alarm.hour -= 1;
 
 
-                configRTC();
-                //delay_ms(300); //wait
 
+            configRTC();
+          }
 
-              }
-              //delay_ms(300); //wait
+  }
 }
-
-
 void setminute(void)
 {
   if (setflag == 1)
   {
     if (!((P5->IN & BIT1) == BIT1))
     {
-      alarm.minute += 1;
-      if (alarm.minute != 59)
-      { alarm.minute += 1;
-        configRTC();
-      }
+
       if (alarm.minute == 59)
       {
-        //delay_ms(300); //wait
+
         alarm.minute = 0;
         alarm.minute = 0;
         alarm.hour += 1;
-        configRTC();
+
       }
-      //delay_ms(300); //wait
+      else
+          alarm.minute += 1;
+      configRTC();
+
     }
     if (!((P5->IN & BIT2) == BIT2))
     {
-      alarm.minute -= 1;
-      if (alarm.minute != 0)
-      { alarm.minute -= 1;
-        configRTC();
-      }
       if (alarm.minute == 0)
       {
        // delay_ms(300); //wait
         alarm.minute = 59;
 
         alarm.hour -= 1;
-        configRTC();
+
       }
       //delay_ms(300); //wait
+      else
+          alarm.minute -= 1;
+      configRTC();
     }
   }
 
@@ -704,112 +662,64 @@ void setminute(void)
   {
     if (!((P5->IN & BIT1) == BIT1))
     {
-      clock.minute += 1;
-      if (clock.minute != 59)
-      { clock.minute += 1;
-        configRTC();
-      }
       if (clock.minute == 59)
       {
        // delay_ms(300); //wait
         clock.minute = 0;
         clock.minute += 1;
-        configRTC();
       }
       //delay_ms(300); //wait
+      else
+          clock.minute += 1;
+      configRTC();
     }
     if (!((P5->IN & BIT2) == BIT2))
     {
-      clock.minute -= 1;
-      if (clock.minute != 0)
-      { clock.minute -= 1;
-        configRTC();
-      }
       if (clock.minute == 0)
       {
        // delay_ms(300); //wait
         clock.minute = 59;
 
         clock.hour -= 1;
-        configRTC();
+
       }
       //delay_ms(300); //wait
+      else
+          clock.minute -= 1;
+      configRTC();
     }
   }
 }
 void setsecond(void)
 {
-  if (setflag == 1)
-  {
-    if (!((P5->IN & BIT1) == BIT1))
-    {
-      alarm.second += 1;
-      if (alarm.second != 59)
-      { alarm.second += 1;
-        configRTC();
-      }
-      if (alarm.second == 59)
-      {
-      //  delay_ms(300); //wait
-        alarm.second = 0; //if it goes to 00 seconds
-        alarm.minute += 1; //it should be incremented by a minute
-        configRTC();
-      }
-      //delay_ms(300); //wait
-    }
-    if (!((P5->IN & BIT2) == BIT2))
-    {
-      alarm.second -= 1;
-      if (alarm.second != 0)
-      { alarm.second -= 1;
-        configRTC();
-      }
-      if (alarm.second == 0)
-      {
-       // delay_ms(300); //wait
-        alarm.second = 59;
-
-        alarm.minute -= 1;
-        configRTC();
-      }
-      //delay_ms(300); //wait
-    }
-  }
-
   if (setflag == 2)
   {
     if (!((P5->IN & BIT1) == BIT1))
     {
-      clock.second += 1;
-      if (clock.second != 59)
-      { clock.second += 1;
-        configRTC();
-      }
+
       if (clock.second == 59)
       {
-        delay_ms(300); //wait
         clock.second = 0;
-        clock.minute += 1;
-        configRTC();
+
       }
       //delay_ms(300); //wait
+      else
+          clock.second += 1;
+      configRTC();
     }
     if (!((P5->IN & BIT2) == BIT2))
     {
-      clock.second -= 1;
-      if (clock.second != 0)
-      { clock.second -= 1;
-        configRTC();
-      }
       if (clock.second == 0)
       {
         //delay_ms(300); //wait
         clock.second = 59;
 
         clock.minute -= 1;
-        configRTC();
+
       }
-     // delay_ms(300); //wait
+      else
+          clock.second -= 1;
+      configRTC();
     }
   }
 }
