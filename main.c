@@ -30,7 +30,7 @@ void dataWrite(uint8_t data);
 
 void sethourclock(void);
 void setminuteclock(void);
-void setsecondclock(void);
+
 
 void sethouralarm(void);
 void setminutealarm(void);
@@ -50,6 +50,10 @@ int setflag = 0;
 
 int displayhour = 0;
 int result = 0;
+
+int hour=0;
+int minute=0;
+char daynight= 'A';
 
 enum states
 {
@@ -158,7 +162,12 @@ void main(void)
         setflag = 0;
         setminutealarm();
         if (setflag == 1)
+          {alarm.hour= hour;
+          alarm.minute= minute;
+          alarm.daynight= daynight;
+          configRTC();
           state = DEFAULT;
+          }
         break;
       case SETHOURCLOCK:
         setflag = 0;
@@ -170,14 +179,16 @@ void main(void)
         setflag = 0;
         setminuteclock();
         if (setflag == 2)
-          state = SETSECONDCLOCK;
+        {
+         alarm.hour= hour;
+         alarm.minute= minute;
+         alarm.daynight= daynight;
+         configRTC();
+         state = DEFAULT;
+        }
         break;
-      case SETSECONDCLOCK:
-        setflag = 0;
-        setsecondclock();
-        if (setflag == 2)
-          state = DEFAULT;
-        break;
+
+
 
     }
   }
@@ -456,40 +467,39 @@ void sethouralarm(void)
 {
   if (buttonP51_Pressed())
   {
-    if (alarm.hour == 23)
+    if (hour == 23)
     {
-      alarm.hour = 0;
-      alarm.daynight = 'A';
+      hour = 0;
+      daynight = 'A';
     }
     else if (alarm.hour != 23)
     {
-      alarm.hour += 1;
-      if (alarm.hour == 12)
+      hour += 1;
+      if (hour == 12)
       {
-        alarm.daynight = 'P';
+        daynight = 'P';
       }
 
     }
-    configRTC();
+
 
   }
   if (buttonP52_Pressed())
   {
-    if (alarm.hour == 0)
+    if (hour == 0)
     {
-      configRTC();
-      alarm.hour = 23;
-      alarm.daynight = 'P';
+        hour = 23;
+  daynight = 'P';
     }
-    else if (alarm.hour != 0)
+    else if (hour != 0)
     {
-      alarm.hour -= 1;
-      if (alarm.hour == 11)
+      hour -= 1;
+      if (hour == 11)
       {
-        alarm.daynight = 'A';
+        daynight = 'A';
       }
     }
-    configRTC();
+
   }
 
 }
@@ -499,39 +509,38 @@ void sethourclock()
 
   if (buttonP51_Pressed())
   {
-    if (clock.hour == 23)
+    if (hour == 23)
     {
-      clock.hour = 0;
-      clock.daynight = 'A';
+      hour = 0;
+      daynight = 'A';
     }
-    else if (clock.hour != 23)
+    else if (hour != 23)
     {
-      clock.hour += 1;
-      if (clock.hour == 12)
+      hour += 1;
+      if (hour == 12)
       {
-        clock.daynight = 'P';
+        daynight = 'P';
       }
 
     }
-    configRTC();
 
   }
   if (buttonP52_Pressed())
   {
-    if (clock.hour == 0)
+    if (hour == 0)
     {
-      alarm.hour = 23;
-      alarm.daynight = 'P';
+      hour = 23;
+      daynight = 'P';
     }
-    else if (alarm.hour != 0)
+    else if (hour != 0)
     {
-      alarm.hour -= 1;
-      if (alarm.hour == 11)
+      hour -= 1;
+      if (hour == 11)
       {
-        alarm.daynight = 'A';
+       daynight = 'A';
       }
     }
-    configRTC();
+
   }
 
 }
@@ -541,34 +550,34 @@ void setminutealarm(void)
   if (buttonP51_Pressed())
   {
 
-    if (alarm.minute == 59)
+    if (minute == 59)
     {
-      alarm.minute = 0;
-      alarm.hour += 1;
+      minute = 0;
+      hour += 1;
 
     }
-    else if (alarm.minute != 59)
+    else if (minute != 59)
     {
-      alarm.minute += 1;
+      minute += 1;
     }
-    configRTC();
+
 
   }
   if (buttonP52_Pressed())
   {
-    if (alarm.minute == 0)
+    if (minute == 0)
     {
-      alarm.minute = 59;
+     minute = 59;
 
-      alarm.hour -= 1;
+      hour -= 1;
 
     }
 
-    else if (alarm.minute != 0)
+    else if (minute != 0)
     {
-      alarm.minute -= 1;
+     minute -= 1;
     }
-    configRTC();
+
   }
 }
 void setminuteclock()
@@ -577,17 +586,17 @@ void setminuteclock()
   if (buttonP51_Pressed())
   {
 
-    if (clock.minute == 59)
+    if (minute == 59)
     {
-      clock.minute = 0;
+      minute = 0;
 
 
     }
-    else if (clock.minute != 59)
+    else if (minute != 59)
     {
-      clock.minute += 1;
+      minute += 1;
     }
-    configRTC();
+
 
   }
   if (buttonP52_Pressed())
@@ -603,41 +612,10 @@ void setminuteclock()
     {
       alarm.minute -= 1;
     }
-    configRTC();
+
   }
 }
-void setsecondclock(void)
-{
 
-  if (buttonP51_Pressed())
-  {
-
-    if (clock.second == 59)
-    {
-      clock.second = 0;
-
-    }
-
-    else if (clock.second != 59)
-    {
-      clock.second += 1;
-    }
-    configRTC();
-  }
-  if (buttonP52_Pressed())
-  {
-    if (clock.second == 0)
-    {
-      clock.second = 59;
-    }
-    else if (clock.second != 59)
-    {
-      clock.second -= 1;
-    }
-
-    configRTC();
-  }
-}
 
 
 void configRTC(void)
