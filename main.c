@@ -1165,15 +1165,15 @@ void sethour(void)
       {
           if(hour==12)
                         {
-                        hour=11;
+                       
                       if(pva_up==1)
-                        { hour=1;
+                        { hour=11;
                         daynight= 'P';
                         }
 
                         if(pva_up==2)
                         {
-                            hour=1;
+                            hour=11;
                             daynight= 'A';
                             pva_up=0;
                         }
