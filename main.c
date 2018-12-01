@@ -23,21 +23,29 @@ void dataWrite(uint8_t data);
 
 
 
-int alarmflag=0;
-int setalarmflag=0;
-int settimeflag=0;
 
 
-int sethouralarm=0;
-int setminutealarm=0;
-int setsecondalarm=0;
+char blinkhour[50];
+char blinkminute[50];
+char hourdisplay[50];
+char minutedisplay[50];
 
-int sethourclock=0;
-int setminuteclock=0;
-int setsecondclock=0;
+void sethour(void);
+void setminute(void);
+void PORT1_IRQHandler();
+int alarmflag = 0;
+int setflag = 0;
 
-int displayhour=0;
-int result=0;
+int displayhour = 0;
+int result = 0;
+
+int hour = 0;
+int minute = 0;
+int second = 0;
+char daynight = 'A';
+
+
+
 
 // global struct variable called clock
 struct
@@ -132,11 +140,14 @@ int time_update = 0, alarm_update = 0;
    uint8_t hours, mins, secs;
 
    void RTC_Init();
-
-enum states{
-    DEFAULT,//Default state
-    SETALARM,
-    SETTIME,
+enum states
+{
+  DEFAULT,
+  SETHOURCLOCK,
+  SETMINUTECLOCK,
+  SETSECONDCLOCK,
+  SETHOURALARM,
+  SETMINUTEALARM,
 };
 
 void main(void)
@@ -332,7 +343,84 @@ while(1)
 
 
 }
+enum states state = DEFAULT;
 
+  while (1)
+  {
+    switch (state)
+    {
+      case DEFAULT:
+        //workingclock();
+          setflag=0;
+          printf("Alarm set to %d: %2d\n", alarm.hour, alarm.minute);
+          printf("Clock set to %d: %d\n", clock.hour, clock.minute);
+        if (setflag == 1)
+        {
+          printf("State: Set hour alarm\n");
+          state = SETHOURALARM;
+        }
+        if (setflag == 2)
+        {
+          printf("State: Set hour clock\n");
+          state = SETHOURCLOCK;
+        }
+        break;
+      case SETHOURALARM:
+        printf("Setting hour\n");
+        setflag = 0;
+        sethour();
+        if (setflag == 1)
+        {
+          printf("State: Set minute alarm\n");
+          state = SETMINUTEALARM;
+
+        }
+        break;
+      case SETMINUTEALARM:
+        printf("Setting Minute Alarm\n");
+        setflag = 0;
+        setminute();
+        if (setflag == 1)
+        {
+          printf("State: Default\n");
+          alarm.hour = hour;
+          alarm.minute = minute;
+          alarm.daynight = daynight;
+          printf("Alarm set to %d: %2d", alarm.hour, alarm.minute );
+          RTC_Init();
+          state = DEFAULT;
+        }
+        break;
+      case SETHOURCLOCK:
+        printf("setting hour clock\n");
+        setflag = 0;
+        sethour();
+        if (setflag == 2)
+        {
+          printf("State: Set minute alarm\n");
+          state = SETMINUTECLOCK;
+        }
+        break;
+      case SETMINUTECLOCK:
+              printf("Setting Minute clock\n");
+              setflag = 0;
+              setminute();
+              if (setflag == 2)
+              {
+//                printf("State: Default\n");
+//                clock.hour = hour;
+//                clock.minute = minute;
+//                clock.daynight = daynight;
+//                printf("Alarm set to %d: %2d", clock.hour, clock.minute );
+//                RTC_Init();
+                state = DEFAULT;
+              }
+              break;
+
+
+
+    }
+  }
 
 }
 
@@ -386,23 +474,23 @@ void InitializeAll(void)
     TIMER_A1->CTL = 0b0000001000010100;
 
     //BUTTON INITIALIZATION
-    //BUTTON 1.6 and BUTTON 1.7 (Button 1.6 SET ALARM, Button 1.7 SET TIME)
-    P1-> SEL0 &= ~(BIT6|BIT7);
-    P1 -> SEL1 &= ~(BIT6|BIT7);
-    P1 -> DIR &= ~(BIT6|BIT7);
-    P1 -> REN |= (BIT6|BIT7);
-    P1->OUT |= (BIT6|BIT7);
-    P1->IE |= (BIT6|BIT7);
-    P1->IES |= (BIT6|BIT7);
+  //BUTTON 1.6 and BUTTON 1.7 (Button 1.6 SET ALARM, Button 1.7 SET TIME
+    P1->SEL0 &= ~(BIT6|BIT7);
+    P1->SEL1 &= ~(BIT6|BIT7);
+    P1->DIR  &= ~(BIT6|BIT7);
+    P1->REN  |=  (BIT6|BIT7);
+    P1->OUT  |=  (BIT6|BIT7);
+    P1->IE   |=  (BIT6|BIT7);
+    NVIC_EnableIRQ(PORT1_IRQn);
 
-    //BUTTON INITIALIZATION FOR ON/OFF/UP and SNOOZE/DOWN
-    P5-> SEL0 &= ~(BIT1|BIT2);
-    P5 -> SEL1 &= ~(BIT1|BIT2);
-    P5 -> DIR &= ~(BIT1|BIT2);
-    P5 -> REN |= (BIT1|BIT2);
-    P5->OUT |= (BIT1|BIT2);
-//    P5->IE |= (BIT1|BIT2);
-//    P5->IES |= (BIT1|BIT2);
+  //BUTTON INITIALIZATION FOR ON/OFF/UP (5.1) and SNOOZE/DOWN (5.2)
+  P5-> SEL0 &= ~(BIT1 | BIT2);
+  P5 -> SEL1 &= ~(BIT1 | BIT2);
+  P5 -> DIR &= ~(BIT1 | BIT2);
+  P5 -> REN |= (BIT1 | BIT2);
+  P5->OUT |= (BIT1 | BIT2);
+  //    P5->IE |= (BIT1|BIT2);
+  //    P5->IES |= (BIT1|BIT2);
 
 
 
@@ -598,73 +686,19 @@ void T32_INT1_IRQHandler()
 
     result = ADC14->MEM[5];  //read conversion result, STORES TO MEM LOCATION 5
 }
+
 //Interupt function for Set Alarm and Set Time
-void PORT1_IRQHandler()
+void PORT1_IRQHandler(void)
 {
-    //Button 1.6 is for SET ALARM
-    //Button 1.7 is for SET TIME
-    if(P1->IFG & BIT6)
-    {
-        P1 -> IFG &= ~BIT6; //clears interrupt
-        if(sethouralarm==0 && setminutealarm==0 && setsecondalarm==0)
-        {
-            //SET HOUR
-            sethouralarm=1;
-        }
-
-        if(sethouralarm==1 && setminutealarm==0 && setsecondalarm==0)
-        {
-            //SET MINUTE
-            setminutealarm=1;
-            setminute();
-        }
-        if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==0)
-        {
-            //SET SECOND
-            setsecondalarm==1;
-        }
-        if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==1)
-        {
-            sethouralarm=0;
-            setminutealarm=0;
-            setsecondalarm=0;
-        }
-
-
+    if(P1->IFG & BIT6) {                                //If P1.1 had an interrupt
+        setflag=1;
+        printf("1.6 pressed");
     }
-
-    //if(buttonP17_pressed())
-    if(P1->IFG & BIT7)
-    {
-        P1 -> IFG &= ~BIT6; //clears interrupt
-       if(sethouralarm==0 && setminutealarm==0 && setsecondalarm==0)
-       {
-           //SET HOUR
-           sethouralarm=1;
-           sethour();
-       }
-       if(sethouralarm==1 && setminutealarm==0 && setsecondalarm==0)
-       {
-           //SET MINUTE
-           setminutealarm=1;
-           setminute();
-       }
-       if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==0)
-       {
-           //SET SECOND
-           setsecondalarm==1;
-           setsecond();
-       }
-       if(sethouralarm==1 && setminutealarm==1 && setsecondalarm==1)
-       {
-           sethouralarm=0;
-           setminutealarm=0;
-           setsecondalarm=0;
-       }
-
+    if(P1->IFG & BIT7) {                                //If P1.4 had an interrupt
+        setflag=2;
+        printf("1.7 pressed");
     }
-
-
+    P1->IFG = 0;                                        //Clear all flags
 }
 
 void RTC_C_IRQHandler()
@@ -1052,4 +1086,126 @@ void RTC_Init()
         RTC_C-> CTL13 = 0;
         NVIC_EnableIRQ(RTC_C_IRQn);
 
+}
+
+
+void sethour(void)
+{
+  int i = 0;
+  while (setflag == 0)
+
+  {
+    if (!((P5->IN & BIT1) == BIT1))
+    {
+      if (hour == 23)
+      {
+        hour = 0;
+        daynight = 'A';
+        printf("HOURINC: %d\n", hour);
+        __delay_cycles(300000);
+      }
+      else if (hour != 23)
+      {
+        hour += 1;
+        printf("HOURINC: %d\n", hour);
+        __delay_cycles(300000);
+        if (hour == 12)
+        {
+          daynight = 'P';
+        }
+
+
+      }
+    }
+
+    if (!((P5->IN & BIT2) == BIT2))
+    {
+      if (hour == 0)
+      {
+        hour = 23;
+        daynight = 'P';
+        printf("HOURDEC: %d\n", hour);
+        __delay_cycles(300000);
+
+      }
+      else if (hour != 0)
+      {
+        hour -= 1;
+        printf("HOURDEC: %d\n", hour);
+        __delay_cycles(300000);
+        if (hour == 11)
+        {
+          daynight = 'A';
+        }
+      }
+
+    }
+    //        while ((!((P5->IN & BIT2) == BIT2)) && (!((P5->IN & BIT1) == BIT1)))
+    //              {
+    //                commandWrite(0xC0);
+    //                for (i = 0; i < 16; i++)
+    //                  dataWrite(hourdisplay[i]);
+    //                delay_ms(300);
+    //                for (i = 0; i < 16; i++)
+    //                  dataWrite(blinkhour[i]);
+    //              }
+
+  }
+}
+
+void setminute(void)
+{
+  int i = 0;
+  while (setflag == 0)
+
+  {
+    if (!((P5->IN & BIT1) == BIT1))
+    {
+      if (minute == 59)
+      {
+        minute = 0;
+        __delay_cycles(300000);
+        printf("MININC: %d\n", minute);
+      }
+      else if (minute != 59)
+      {
+        minute += 1;
+        printf("MININC: %d\n", minute);
+        __delay_cycles(300000);
+
+
+
+      }
+    }
+
+    if (!((P5->IN & BIT2) == BIT2))
+    {
+      if (minute == 0)
+      {
+        minute = 59;
+        printf("MINDEC: %d\n", minute);
+        __delay_cycles(300000);
+
+      }
+      else if (minute != 0)
+      {
+        minute -= 1;
+        printf("MINDEC: %d\n", minute);
+        __delay_cycles(300000);
+
+      }
+
+    }
+    //        while ((!((P5->IN & BIT2) == BIT2)) && (!((P5->IN & BIT1) == BIT1)))
+    //              {
+    //                commandWrite(0xC0);
+    //                for (i = 0; i < 16; i++)
+    //                  dataWrite(hourdisplay[i]);
+    //                delay_ms(300);
+    //                commandWrite(0xC0);
+    //                for (i = 0; i < 16; i++)
+    //                  dataWrite(blinkhour[i]);
+    //              }
+
+  }
 }
