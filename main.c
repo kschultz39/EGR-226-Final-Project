@@ -256,6 +256,10 @@ unsigned int Serial_flag = 0;
 int time_update = 0, alarm_update = 0;
 uint8_t hours, mins, secs;
 
+  //FOR TIME FROM ZUIDEMA, FOR SETTING FASTER ADVANCING TIME
+   // display_state 0=show time, 1= show alarm
+   int display_state = 0;
+
 void RTC_Init();
 enum states
 {
