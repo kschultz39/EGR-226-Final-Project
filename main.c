@@ -1159,7 +1159,7 @@ void sethour(void)
                         {
                             hour=11;
                             daynight= 'A';
-                            pva_up=0;
+                            pva_down=0;
                         }
 
                         }
