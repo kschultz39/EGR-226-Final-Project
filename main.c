@@ -34,6 +34,8 @@ void sethour(void);
 void setminute(void);
 void PORT1_IRQHandler();
 int alarmflag = 0;
+int snoozeflag=0;
+int enablealarmflag=0;
 int setflag = 0;
 
 int displayhour = 0;
@@ -470,8 +472,15 @@ void main(void)
             dataWrite(buffer[i]);
           //commandWrite(0xC0); //Prints to line 2 of LCD
 
+           commandWrite(0x90) //prints to line 3 of the LCD
+              if(enablealarmflag==1)
+                 sprintf(buffer, "Alarm On");
+              if(enablealarm==0)
+                 sprintf(buffer, "Alarm Off");
+           for(i=0; i<16; i++)
+              dataWrite(buffer[i]);
           //TEMP SENSOR CODE
-          commandWrite(0xD0); //Prints to line 3 of LCD
+          commandWrite(0xD0); //Prints to line 4 of LCD
 
           ADC14->CTL0 |= 1;  //Start conversion
           while (!ADC14->IFGR0);  // wait till conversion completes  read is ADC14IFGRO
@@ -499,7 +508,7 @@ void main(void)
 
 
             SetupTimer32s();   //FOR SOUNDER ALARMInitializes Timer32_1 as a non-interrupt timer and Timer32_2 as a interrupt timers.  Also initializes TimerA and P2.4 for music generation.
-
+            alarmflag=0;
             alarm_update = 0;
 
             // state = DEFAULT;
@@ -541,6 +550,7 @@ void main(void)
             alarm.daynight = daynight;
             printf("Alarm set to %d: %2d", alarm.hour, alarm.minute );
             RTC_Init();
+            alarmflag=1;
             state = DEFAULT;
           }
           break;
