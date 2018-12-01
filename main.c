@@ -840,14 +840,9 @@ void RTC_C_IRQHandler()
 //FOR SOUNDER CODE************************************************************************************
 /*
   void TA0_N_IRQHandler()
-
   Interrupt Handler for Timer A1.  The name of this function is set in startup_msp432p401r_ccs.c
-
   This handler clears the status of the interrupt for Timer32_A0 CCTL 1 and 2
-
-
   Turns on when CCTL1 interrupts.  Turns off with CCTL2 interrupts.
-
   -------------------------------------------------------------------------------------------------------------------------------*/
 void TA0_N_IRQHandler()
 {
@@ -858,13 +853,10 @@ void TA0_N_IRQHandler()
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------------
-
    void SetupTimer32s()
-
    Configures Timer32_1 as a single shot (runs once) timer that does not interrupt so the value must be monitored.
    Configures Timer32_2 as a single shot (runs once) timer that does interrupt and will run the interrupt handler 1 second
    after this function is called (and the master interrupt is enabled).
-
   -------------------------------------------------------------------------------------------------------------------------------*/
 void SetupTimer32s()
 {
@@ -891,16 +883,11 @@ void SetupTimer32s()
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------------
-
    void T32_INT2_IRQHandler()
-
    Interrupt Handler for Timer 2.  The name of this function is set in startup_msp432p401r_ccs.c
-
    This handler clears the status of the interrupt for Timer32_2
-
    Sets up the next note to play in sequence and loads it into TimerA for play back at that frequency.
    Enables a new Timer32 value to interrupt after the note is complete.
-
   -------------------------------------------------------------------------------------------------------------------------------*/
 
 void T32_INT2_IRQHandler()
@@ -942,7 +929,6 @@ void T32_INT2_IRQHandler()
 
 /*----------------------------------------------------------------
    void writeOutput(char *string)
-
    Description:  This is a function similar to most serial port
    functions like printf.  Written as a demonstration and not
    production worthy due to limitations.
@@ -963,7 +949,6 @@ void writeOutput(char *string)
 
 /*----------------------------------------------------------------
    void readInput(char *string)
-
    Description:  This is a function similar to most serial port
    functions like ReadLine.  Written as a demonstration and not
    production worthy due to limitations.
@@ -1000,7 +985,6 @@ void readInput(char *string)
 
 /*----------------------------------------------------------------
    void EUSCIA0_IRQHandler(void)
-
    Description: Interrupt handler for serial communication on EUSCIA0.
    Stores the data in the RXBUF into the INPUT_BUFFER global character
    array for reading in the main application
@@ -1165,13 +1149,13 @@ void sethour(void)
       {
           if(hour==12)
                         {
-                       
-                      if(pva_up==1)
+
+                      if(pva_down==1)
                         { hour=11;
                         daynight= 'P';
                         }
 
-                        if(pva_up==2)
+                        if(pva_down==2)
                         {
                             hour=11;
                             daynight= 'A';
