@@ -112,6 +112,7 @@ uint8_t hours, mins, secs;
 void main(void)
 {
   InitializeAll();
+  __enable_interrupt();
 
   //int seconds;
   clock.hour = 2;
@@ -132,21 +133,6 @@ void main(void)
 
 
 
-  RTC_C->CTL0 = (0xA500) ;
-  RTC_C->CTL13 = 0;
-  //initialize time to 2:45 pm
-  //RTC_C->TIM0 = 0x2000; //45 min, 0 sec
-  RTC_C->TIM0 = clock.minute << 8 | clock.second; //45 min, 0 seconds
-  RTC_C->TIM1 = clock.hour << 8 | 14;
-
-  //Alarm set at 2:45 om
-  RTC_C->AMINHR = 14 << 8 | 46 | BIT(15) | BIT(7); //bit 15 and 7 are alarm enable bits
-  RTC_C->ADOWDAY = 0;
-  RTC_C->PS1CTL = 0b11010; //1 second interrupt
-
-  RTC_C->CTL0 = (0xA500) | BIT5;
-  RTC_C-> CTL13 = 0;
-  NVIC_EnableIRQ(RTC_C_IRQn);
 
 
 
@@ -184,7 +170,7 @@ void main(void)
         }
         break;
       case SETMINUTEALARM:
-        printf("Setting Minute\n");
+        printf("Setting Minute Alarm\n");
         setflag = 0;
         setminute();
         if (setflag == 1)
@@ -205,25 +191,24 @@ void main(void)
         if (setflag == 2)
         {
           printf("State: Set minute alarm\n");
-          state = SETMINUTEALARM;
+          state = SETMINUTECLOCK;
         }
         break;
       case SETMINUTECLOCK:
-        setflag = 0;
-        printf("setting minute\n");
-
-        setminute();
-        if (setflag == 2)
-        {
-                      printf("State: Default\n");
-                      clock.hour = hour;
-                      clock.minute = minute;
-                      clock.daynight = daynight;
-                      printf("Alarm set to %d: %2d: %2d\n", clock.hour, clock.minute, clock.second);
-                      RTC_Init();
-                      state = DEFAULT;
-                    }
-        break;
+              printf("Setting Minute clock\n");
+              setflag = 0;
+              setminute();
+              if (setflag == 2)
+              {
+//                printf("State: Default\n");
+//                clock.hour = hour;
+//                clock.minute = minute;
+//                clock.daynight = daynight;
+//                printf("Alarm set to %d: %2d", clock.hour, clock.minute );
+//                RTC_Init();
+                state = DEFAULT;
+              }
+              break;
 
 
 
@@ -465,9 +450,11 @@ void PORT1_IRQHandler(void)
 {
     if(P1->IFG & BIT6) {                                //If P1.1 had an interrupt
         setflag=1;
+        printf("1.6 pressed");
     }
     if(P1->IFG & BIT7) {                                //If P1.4 had an interrupt
         setflag=2;
+        printf("1.7 pressed");
     }
     P1->IFG = 0;                                        //Clear all flags
 }
