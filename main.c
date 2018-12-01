@@ -349,6 +349,8 @@ enum states state = DEFAULT;
 
                   alarm_update = 0;
 
+                 // state = DEFAULT;
+
               }
 
 
@@ -405,12 +407,12 @@ enum states state = DEFAULT;
               setminute();
               if (setflag == 2)
               {
-//                printf("State: Default\n");
-//                clock.hour = hour;
-//                clock.minute = minute;
-//                clock.daynight = daynight;
-//                printf("Alarm set to %d: %2d", clock.hour, clock.minute );
-//                RTC_Init();
+                printf("State: Default\n");
+                clock.hour = hour;
+                clock.minute = minute;
+                clock.daynight = daynight;
+                printf("Alarm set to %d: %2d", clock.hour, clock.minute );
+                RTC_Init();
                 state = DEFAULT;
               }
               break;
