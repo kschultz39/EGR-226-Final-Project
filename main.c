@@ -73,17 +73,35 @@ int note = 0;       //The note in the music sequence we are on
 int breath = 0;     //Take a breath after each note.  This creates seperation
 
 //Defining the musical notes needed for the song (frequencies)
-#define C4 261.63
-#define D4 293.66
-#define E4 329.63
+//F notes
 #define F4 349.23
 #define F4SHARP 369.99
-#define G4 392
-#define A4 440
-#define B4 493.88
-#define C5 523.25
-#define D5 587.33
+#define F5 698.46
+
+//E notes
+#define E4 329.63
 #define E5 659.25
+
+//D notes
+#define D4 293.66
+#define D5 587.33
+
+//C notes
+#define C4 262.63
+#define C5 524.25
+
+//B notes
+#define B4 493.88
+#define B5 987.77
+
+//A notes
+#define A4 440
+#define A5 880
+
+//G notes
+#define G4 392
+#define G5 783.99
+
 #define REST 0
 
 //Defining the lengths of notes
@@ -97,27 +115,124 @@ int breath = 0;     //Take a breath after each note.  This creates seperation
 
 #define MAX_NOTE 100 // How many notes are in the song below
 
-float music_note_sequence[][2] = {  // Part of Jingle Bells
+float music_note_sequence[][2] = {  // Deck the halls song
 
-                                 {D4,QUARTER},
-                                 {B4,QUARTER},
-                                 {A4,QUARTER},
-                                 {G4,QUARTER},
-                                 {D4,HALFPLUS},
+                                    //FIRST
+                                                                     {C5,QUARTERPLUS},
+                                                                     {B4,EIGHTH},
+                                                                     {A4,QUARTER},
+                                                                     {G4,QUARTER},
 
-                                 {D4,EIGHTH},
+                                                                     //SECOND
+                                                                     {F4,QUARTER},
+                                                                     {G4,QUARTER},
+                                                                     {A4,QUARTER},
+                                                                     {F4,QUARTER},
 
-                                 {D4,EIGHTH},
-                                 {D4,QUARTER},
-                                 {B4,QUARTER},
-                                 {A4,QUARTER},
-                                 {G4,QUARTER},
-                                 {E4,WHOLE},
+                                                                     //THIRD
+                                                                     {G4,EIGHTH},
+                                                                     {A4,EIGHTH},
+                                                                     {B4,EIGHTH},
+                                                                     {G4,EIGHTH},
+                                                                     {A4,QUARTER},
+                                                                     {G4,EIGHTH},
 
-                                 {E4,QUARTER},
+                                                                     //FOURTH
+                                                                     {F4,QUARTER},
+                                                                     {E4,QUARTER},
+                                                                     {F4,HALF},
 
-                                 {REST,WHOLE},
-                                 {REST,WHOLE},
+
+                                    //////////////////////////////////Second line of music/////////////////////////////////////////
+
+                                                                     //FIRST
+                                                                     {C5,QUARTERPLUS},
+                                                                     {B4,EIGHTH},
+                                                                     {A4,QUARTER},
+                                                                     {G4,QUARTER},
+
+
+                                                                     //SECOND
+                                                                     {F4,QUARTER},
+                                                                     {G4,QUARTER},
+                                                                     {A4,QUARTER},
+                                                                     {F4,QUARTER},
+
+                                                                     //THIRD
+                                                                     {G4,EIGHTH},
+                                                                     {A4,EIGHTH},
+                                                                     {B4,EIGHTH},
+                                                                     {G4,EIGHTH},
+                                                                     {A4,QUARTER},
+                                                                     {G4,EIGHTH},
+
+                                                                     //FOURTH
+                                                                     {F4,QUARTER},
+                                                                     {E4,QUARTER},
+                                                                     {F4,HALF},
+
+                                    ////////////////////////////////Third line of music/////////////////////////////////////////
+
+                                                                       //First
+                                                                     {G4,QUARTERPLUS},
+                                                                     {A4,EIGHTH},
+                                                                     {B4,QUARTER},
+                                                                     {G4,QUARTER},
+
+                                                                      //Second
+                                                                     {A4,QUARTERPLUS},
+                                                                     {B4,EIGHTH},
+                                                                     {C5,QUARTER},
+                                                                     {G4,QUARTER},
+
+
+                                                                      //Third
+                                                                     {A4,EIGHTH},
+                                                                     {B4,EIGHTH},
+                                                                     {C5,QUARTER},
+                                                                     {D5,EIGHTH},
+                                                                     {E5,EIGHTH},
+                                                                     {F5,QUARTER},
+
+                                                                     //Fourth
+                                                                     {E5,QUARTER},
+                                                                     {D5,QUARTER},
+                                                                     {C5,HALF},
+
+
+                                    ////////////////////////////////Fourth line of music/////////////////////////////////////////
+
+                                                                     //First
+                                                                     {C5,QUARTERPLUS},
+                                                                     {B4,EIGHTH},
+                                                                     {A4,QUARTER},
+                                                                     {G4,QUARTER},
+
+                                                                     //Second
+                                                                     {F4,QUARTER},
+                                                                     {G4,QUARTER},
+                                                                     {A4,QUARTER},
+                                                                     {F4,QUARTER},
+
+
+                                                                     //THIRD
+
+                                                                     {D5,EIGHTH},
+                                                                     {D5,EIGHTH},
+                                                                     {D5,EIGHTH},
+                                                                     {D5,EIGHTH},
+                                                                     {C5,QUARTERPLUS},
+                                                                     {B4,EIGHTH},
+
+
+                                                                     //FOURTH
+
+                                                                     {A4,QUARTER},
+                                                                     {G4,QUARTER},
+                                                                     {F4,HALF},
+
+                                                                     {REST,WHOLE},
+                                                                     {REST,WHOLE},
 };
 
 ///SERIAL INIT CODE
