@@ -37,6 +37,8 @@ int alarmflag = 0;
 int setflag = 0;
 
 int displayhour = 0;
+int displayminute = 0;
+int displaysecond = 0;
 int result = 0;
 
 int hour = 0;
@@ -408,6 +410,38 @@ void main(void)
         //RTC CLOCK
         if (time_update) {
           time_update = 0;
+           
+           
+             //TRYING STUFF
+//                  displayminute = clock.minute;
+//                  displaysecond = clock.second;
+                  //displayhour = clock.hour;
+
+                  //ADVANCE TIME STUFF
+                           if(display_state == 1)
+                               //time advnaces 1 minute per second
+                           {
+                               clock.hour = clock.minute;
+                               clock.minute = clock.second;
+
+                               printf("   %02d:%02d:00 %cM\n", clock.hour, clock.minute, clock.daynight);
+//                                  displayminute=clock.second;
+//                                  if(displayminute == 0)
+//                                  {
+//                                      clock.hour += 1;
+//                                  }
+//                                   displaysecond = 0;
+                           }
+
+                                       if(display_state == 0)
+                                       {
+                                           printf("   %02d:%02d:%02d %cM\n", clock.hour, clock.minute, clock.second, clock.daynight);
+//                                          //time returns to normal
+//                                           displayminute = clock.minute;
+//                                           displayhour = clock.hour;
+//                                           displaysecond = clock.second;
+                                       }
+           
           if (clock.hour > 12)
           {
             displayhour = (clock.hour) - (12);
@@ -607,9 +641,14 @@ void InitializeAll(void)
   //    P5->IE |= (BIT1|BIT2);
   //    P5->IES |= (BIT1|BIT2);
 
-
-
-
+//BUTTON INITIALIZATION FOR SIDE BUTTONS, SPEED TIME UP/ SLOW TIME DOWN
+      P1->SEL0 &= ~(BIT1|BIT4);
+      P1->SEL1 &= ~(BIT1|BIT4);
+      P1->DIR  &= ~(BIT1|BIT4);
+      P1->REN  |=  (BIT1|BIT4);
+      P1->OUT  |=  (BIT1|BIT4);
+      P1->IE   |=  (BIT1|BIT4);
+      NVIC_EnableIRQ(PORT1_IRQn);
 
   //Initialization for Temperature sensor
   ADC14->CTL0 = 0x00000010;  // power on and disabled during configuration
@@ -813,6 +852,15 @@ void PORT1_IRQHandler(void)
     setflag = 2;
     printf("1.7 pressed");
   }
+   
+     //Add both buttons here setflag =3 and set falg = 2 added from Zuidemas advanced RTC code
+    if(P1->IFG & BIT1) {                                //If P1.1 had an interrupt
+            display_state = 1;
+        }
+        if(P1->IFG & BIT4) {                                //If P1.4 had an interrupt
+            display_state = 0;
+        }
+   
   P1->IFG = 0;                                        //Clear all flags
 }
 
