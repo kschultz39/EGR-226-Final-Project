@@ -1,4 +1,4 @@
-/**
+/*
   Authors: Kelly Schultz and Nathan Gruber
   Instructors: Professor Zuidema
   Date: 11/28/18
@@ -28,12 +28,8 @@ void pushByte(uint8_t byte);
 void commandWrite(uint8_t command);
 void dataWrite(uint8_t data);
 
-void sethourclock(void);
-void setminuteclock(void);
-
-
-void sethouralarm(void);
-void setminutealarm(void);
+void sethour(void);
+void setminute(void);
 
 void configRTC(void);
 
@@ -51,9 +47,17 @@ int setflag = 0;
 int displayhour = 0;
 int result = 0;
 
-int hour=0;
-int minute=0;
-char daynight= 'A';
+int hour = 0;
+int minute = 0;
+int second = 0;
+char daynight = 'A';
+
+char blinkhour[50];
+char blinkminute[50];
+char hourdisplay[50];
+char minutedisplay[50];
+
+
 
 enum states
 {
@@ -121,6 +125,13 @@ void main(void)
 
 
 
+  sprintf(blinkhour, "  :%d:%d", minute, second);
+  sprintf(hourdisplay, "%d:%2d:%2d", hour, minute, second);
+  sprintf(minutedisplay, "%d: %2d:%2d", hour, minute, second);
+  sprintf(blinkminute, "%d:  :%d", hour, second);
+
+
+
   RTC_C->CTL0 = (0xA500) ;
   RTC_C->CTL13 = 0;
   //initialize time to 2:45 pm
@@ -146,46 +157,70 @@ void main(void)
     switch (state)
     {
       case DEFAULT:
-        workingclock();
+        //workingclock();
+          printf("Alarm set to %d: %2d", alarm.hour, alarm.minute);
+          printf("Clock set to %d: %d", clock.hour, clock.minute);
         if (setflag == 1)
+        {
+          printf("State: Set hour alarm\n");
           state = SETHOURALARM;
-        if (setflag == 2)
-          state = SETHOURCLOCK;
-        break;
-      case SETHOURALARM:
-        setflag = 0;
-        sethouralarm();
-        if (setflag == 1)
-          state = SETMINUTEALARM;
-        break;
-      case SETMINUTEALARM:
-        setflag = 0;
-        setminutealarm();
-        if (setflag == 1)
-          {alarm.hour= hour;
-          alarm.minute= minute;
-          alarm.daynight= daynight;
-          configRTC();
-          state = DEFAULT;
-          }
-        break;
-      case SETHOURCLOCK:
-        setflag = 0;
-        sethourclock();
-        if (setflag == 2)
-          state = SETMINUTEALARM;
-        break;
-      case SETMINUTECLOCK:
-        setflag = 0;
-        setminuteclock();
+        }
         if (setflag == 2)
         {
-         alarm.hour= hour;
-         alarm.minute= minute;
-         alarm.daynight= daynight;
-         configRTC();
-         state = DEFAULT;
+          printf("State: Set hour clock\n");
+          state = SETHOURCLOCK;
         }
+        break;
+      case SETHOURALARM:
+        printf("Setting hour\n");
+        setflag = 0;
+        sethour();
+        if (setflag == 1)
+        {
+          printf("State: Set minute alarm\n");
+          state = SETMINUTEALARM;
+
+        }
+        break;
+      case SETMINUTEALARM:
+        printf("Setting Minute\n");
+        setflag = 0;
+        setminute();
+        if (setflag == 1)
+        {
+          printf("State: Default\n");
+          alarm.hour = hour;
+          alarm.minute = minute;
+          alarm.daynight = daynight;
+          printf("Alarm set to %d: %2d", alarm.hour, alarm.minute );
+          configRTC();
+          state = DEFAULT;
+        }
+        break;
+      case SETHOURCLOCK:
+        printf("setting hour clock\n");
+        setflag = 0;
+        sethour();
+        if (setflag == 2)
+        {
+          printf("State: Set minute alarm\n");
+          state = SETMINUTEALARM;
+        }
+        break;
+      case SETMINUTECLOCK:
+        printf("setting minute\n");
+        setflag = 0;
+        setminute();
+        if (setflag == 2)
+        {
+                      printf("State: Default\n");
+                      clock.hour = hour;
+                      clock.minute = minute;
+                      clock.daynight = daynight;
+                      printf("Alarm set to %d: %2d: %2d\n", clock.hour, clock.minute, clock.second);
+                      configRTC();
+                      state = DEFAULT;
+                    }
         break;
 
 
@@ -433,6 +468,8 @@ void PORT1_IRQHandler()
   {
     P1 -> IFG &= ~BIT6; //clears interrupt
     setflag = 1;
+    printf("test1\n");
+    //__delay_cycles(10000000);
 
   }
   //if(buttonP17_pressed())
@@ -440,6 +477,8 @@ void PORT1_IRQHandler()
   {
     P1 -> IFG &= ~BIT7; //clears interrupt
     setflag = 2;
+    printf("test2\n");
+    //__delay_cycles(10000000);
   }
 
 
@@ -463,158 +502,127 @@ void RTC_C_IRQHandler()
     RTC_C->CTL0 = (0xA500) | BIT5;
   }
 }
-void sethouralarm(void)
+void sethour(void)
 {
-  if (buttonP51_Pressed())
+  int i = 0;
+  while (setflag == 0)
+
   {
-    if (hour == 23)
+    if (!((P5->IN & BIT1) == BIT1))
     {
-      hour = 0;
-      daynight = 'A';
-    }
-    else if (alarm.hour != 23)
-    {
-      hour += 1;
-      if (hour == 12)
+      if (hour == 23)
       {
-        daynight = 'P';
-      }
-
-    }
-
-
-  }
-  if (buttonP52_Pressed())
-  {
-    if (hour == 0)
-    {
-        hour = 23;
-  daynight = 'P';
-    }
-    else if (hour != 0)
-    {
-      hour -= 1;
-      if (hour == 11)
-      {
+        hour = 0;
         daynight = 'A';
+        printf("HOURINC: %d\n", hour);
+        __delay_cycles(300000);
+      }
+      else if (hour != 23)
+      {
+        hour += 1;
+        printf("HOURINC: %d\n", hour);
+        __delay_cycles(300000);
+        if (hour == 12)
+        {
+          daynight = 'P';
+        }
+
+
       }
     }
 
-  }
-
-}
-
-void sethourclock()
-{
-
-  if (buttonP51_Pressed())
-  {
-    if (hour == 23)
+    if (!((P5->IN & BIT2) == BIT2))
     {
-      hour = 0;
-      daynight = 'A';
-    }
-    else if (hour != 23)
-    {
-      hour += 1;
-      if (hour == 12)
+      if (hour == 0)
       {
+        hour = 23;
         daynight = 'P';
+        printf("HOURDEC: %d\n", hour);
+        __delay_cycles(300000);
+
       }
-
-    }
-
-  }
-  if (buttonP52_Pressed())
-  {
-    if (hour == 0)
-    {
-      hour = 23;
-      daynight = 'P';
-    }
-    else if (hour != 0)
-    {
-      hour -= 1;
-      if (hour == 11)
+      else if (hour != 0)
       {
-       daynight = 'A';
+        hour -= 1;
+        printf("HOURDEC: %d\n", hour);
+        __delay_cycles(300000);
+        if (hour == 11)
+        {
+          daynight = 'A';
+        }
+      }
+
+    }
+    //        while ((!((P5->IN & BIT2) == BIT2)) && (!((P5->IN & BIT1) == BIT1)))
+    //              {
+    //                commandWrite(0xC0);
+    //                for (i = 0; i < 16; i++)
+    //                  dataWrite(hourdisplay[i]);
+    //                delay_ms(300);
+    //                for (i = 0; i < 16; i++)
+    //                  dataWrite(blinkhour[i]);
+    //              }
+
+  }
+}
+
+void setminute(void)
+{
+  int i = 0;
+  while (setflag == 0)
+
+  {
+    if (!((P5->IN & BIT1) == BIT1))
+    {
+      if (minute == 59)
+      {
+        minute = 0;
+        __delay_cycles(300000);
+        printf("MININC: %d\n", minute);
+      }
+      else if (minute != 59)
+      {
+        minute += 1;
+        printf("MININC: %d\n", minute);
+        __delay_cycles(300000);
+
+
+
       }
     }
 
-  }
-
-}
-void setminutealarm(void)
-{
-
-  if (buttonP51_Pressed())
-  {
-
-    if (minute == 59)
+    if (!((P5->IN & BIT2) == BIT2))
     {
-      minute = 0;
-      hour += 1;
+      if (minute == 0)
+      {
+        minute = 59;
+        printf("MINDEC: %d\n", minute);
+        __delay_cycles(300000);
+
+      }
+      else if (minute != 0)
+      {
+        minute -= 1;
+        printf("MINDEC: %d\n", minute);
+        __delay_cycles(300000);
+
+      }
 
     }
-    else if (minute != 59)
-    {
-      minute += 1;
-    }
-
-
-  }
-  if (buttonP52_Pressed())
-  {
-    if (minute == 0)
-    {
-     minute = 59;
-
-      hour -= 1;
-
-    }
-
-    else if (minute != 0)
-    {
-     minute -= 1;
-    }
+    //        while ((!((P5->IN & BIT2) == BIT2)) && (!((P5->IN & BIT1) == BIT1)))
+    //              {
+    //                commandWrite(0xC0);
+    //                for (i = 0; i < 16; i++)
+    //                  dataWrite(hourdisplay[i]);
+    //                delay_ms(300);
+    //                commandWrite(0xC0);
+    //                for (i = 0; i < 16; i++)
+    //                  dataWrite(blinkhour[i]);
+    //              }
 
   }
 }
-void setminuteclock()
-{
 
-  if (buttonP51_Pressed())
-  {
-
-    if (minute == 59)
-    {
-      minute = 0;
-
-
-    }
-    else if (minute != 59)
-    {
-      minute += 1;
-    }
-
-
-  }
-  if (buttonP52_Pressed())
-  {
-    if (clock.minute == 0)
-    {
-
-      clock.minute = 59;
-
-    }
-
-    else if (alarm.minute != 0)
-    {
-      alarm.minute -= 1;
-    }
-
-  }
-}
 
 
 
@@ -632,29 +640,7 @@ void configRTC(void)
   RTC_C->CTL0     = ((0xA500) | BIT5);
 
 }
-int buttonP52_Pressed()
-{
-  int button_result = 0;
-  if (!((P5->IN & BIT2) == BIT2))
-  {
-    __delay_cycles(3000000);
-    while (!((P5->IN & BIT2) == BIT2)) {}
-    button_result = 1;
-  }
-  return button_result;
-}
 
-int buttonP51_Pressed()
-{
-  int button_result = 0;
-  if (!((P5->IN & BIT1) == BIT1))
-  {
-    __delay_cycles(3000000);
-    while (!((P5->IN & BIT1) == BIT2)) {}
-    button_result = 1;
-  }
-  return button_result;
-}
 void workingclock(void)
 {
   char buffer[50];
