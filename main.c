@@ -31,7 +31,7 @@ void dataWrite(uint8_t data);
 void sethour(void);
 void setminute(void);
 
-void configRTC(void);
+void RTC_Init(void);
 
 int buttonP52_Pressed();
 int buttonP51_Pressed();
@@ -158,8 +158,9 @@ void main(void)
     {
       case DEFAULT:
         //workingclock();
-          printf("Alarm set to %d: %2d", alarm.hour, alarm.minute);
-          printf("Clock set to %d: %d", clock.hour, clock.minute);
+          setflag=0;
+          printf("Alarm set to %d: %2d\n", alarm.hour, alarm.minute);
+          printf("Clock set to %d: %d\n", clock.hour, clock.minute);
         if (setflag == 1)
         {
           printf("State: Set hour alarm\n");
@@ -193,7 +194,7 @@ void main(void)
           alarm.minute = minute;
           alarm.daynight = daynight;
           printf("Alarm set to %d: %2d", alarm.hour, alarm.minute );
-          configRTC();
+          RTC_Init();
           state = DEFAULT;
         }
         break;
@@ -208,8 +209,9 @@ void main(void)
         }
         break;
       case SETMINUTECLOCK:
-        printf("setting minute\n");
         setflag = 0;
+        printf("setting minute\n");
+
         setminute();
         if (setflag == 2)
         {
@@ -218,7 +220,7 @@ void main(void)
                       clock.minute = minute;
                       clock.daynight = daynight;
                       printf("Alarm set to %d: %2d: %2d\n", clock.hour, clock.minute, clock.second);
-                      configRTC();
+                      RTC_Init();
                       state = DEFAULT;
                     }
         break;
@@ -276,15 +278,14 @@ void InitializeAll(void)
   TIMER_A1->CTL = 0b0000001000010100;
 
   //BUTTON INITIALIZATION
-  //BUTTON 1.6 and BUTTON 1.7 (Button 1.6 SET ALARM, Button 1.7 SET TIME)
-  P1-> SEL0 &= ~(BIT6 | BIT7);
-  P1 -> SEL1 &= ~(BIT6 | BIT7);
-  P1 -> DIR &= ~(BIT6 | BIT7);
-  P1 -> REN |= (BIT6 | BIT7);
-  P1->OUT |= (BIT6 | BIT7);
-  P1->IE |= (BIT6 | BIT7);
-  P1->IES |= (BIT6 | BIT7);
-  NVIC_EnableIRQ(PORT1_IRQn);
+  //BUTTON 1.6 and BUTTON 1.7 (Button 1.6 SET ALARM, Button 1.7 SET TIME
+    P1->SEL0 &= ~(BIT6|BIT7);
+    P1->SEL1 &= ~(BIT6|BIT7);
+    P1->DIR  &= ~(BIT6|BIT7);
+    P1->REN  |=  (BIT6|BIT7);
+    P1->OUT  |=  (BIT6|BIT7);
+    P1->IE   |=  (BIT6|BIT7);
+    NVIC_EnableIRQ(PORT1_IRQn);
 
   //BUTTON INITIALIZATION FOR ON/OFF/UP (5.1) and SNOOZE/DOWN (5.2)
   P5-> SEL0 &= ~(BIT1 | BIT2);
@@ -460,29 +461,20 @@ void T32_INT1_IRQHandler()
   result = ADC14->MEM[5];  //read conversion result, STORES TO MEM LOCATION 5
 }
 //Interupt function for Set Alarm and Set Time
-void PORT1_IRQHandler()
+void PORT1_IRQHandler(void)
 {
-  //Button 1.6 is for SET ALARM
-  //Button 1.7 is for SET TIME
-  if (P1->IFG & BIT6)
-  {
-    P1 -> IFG &= ~BIT6; //clears interrupt
-    setflag = 1;
-    printf("test1\n");
-    //__delay_cycles(10000000);
-
-  }
-  //if(buttonP17_pressed())
-  if (P1->IFG & BIT7)
-  {
-    P1 -> IFG &= ~BIT7; //clears interrupt
-    setflag = 2;
-    printf("test2\n");
-    //__delay_cycles(10000000);
-  }
-
-
+    if(P1->IFG & BIT6) {                                //If P1.1 had an interrupt
+        setflag=1;
+    }
+    if(P1->IFG & BIT7) {                                //If P1.4 had an interrupt
+        setflag=2;
+    }
+    P1->IFG = 0;                                        //Clear all flags
 }
+
+
+
+
 
 void RTC_C_IRQHandler()
 {
@@ -626,18 +618,24 @@ void setminute(void)
 
 
 
-void configRTC(void)
+void RTC_Init()
 {
-  RTC_C->CTL0     =   0xA500;     //Write Code, IE on RTC Ready
-  RTC_C->CTL13    =   0x0000;
-  RTC_C->TIM0     = (clock.minute) << 8 | (clock.second); //minutes, seconds
-  RTC_C->TIM1     = (clock.hour) << 8 | 12;
+    //RTC CODE FROM LECTURE
+     RTC_C->CTL0 = (0xA500) ;
+    RTC_C->CTL13 = 0;
+        //initialize time to 2:45 pm
+        //RTC_C->TIM0 = 0x2000; //45 min, 0 sec
+        RTC_C->TIM0 = (clock.minute) << 8 | (clock.second); //45 min, 0 seconds
+        RTC_C->TIM1 = 1 << 8 | (clock.hour);
+        RTC_C->YEAR = 2018;
+        //Alarm set at 2:46 om
+        RTC_C->AMINHR = alarm.hour << 8 | alarm.minute | BIT(15) | BIT(7); //bit 15 adn 7 are alarm enable bits
+        RTC_C->ADOWDAY = 0;
+        RTC_C->PS1CTL = 0b11010; //1 second interrupt
 
-  RTC_C->PS1CTL   = 0b11010;
-
-  RTC_C->AMINHR   = (alarm.hour) << 8 | (alarm.minute) | BIT(15) | BIT(7);
-  RTC_C->ADOWDAY = 0;
-  RTC_C->CTL0     = ((0xA500) | BIT5);
+        RTC_C->CTL0 = (0xA500) | BIT5;
+        RTC_C-> CTL13 = 0;
+        NVIC_EnableIRQ(RTC_C_IRQn);
 
 }
 
