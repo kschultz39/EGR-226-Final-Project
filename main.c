@@ -273,8 +273,7 @@ enum states
   SETMINUTEALARM,
 };
 
-void main(void)
-{
+void main(void){
 
   WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD; //stop watchdog timer
   InitializeAll();
@@ -460,26 +459,33 @@ void main(void)
             clock.daynight = 'A';
           }
 
-
+          //Prints time to CCS
           printf("   %02d:%02d:%02d %cM\n", displayhour, clock.minute, clock.second, clock.daynight);
-          commandWrite(0x0F); //turn off blinking cursor
-          commandWrite(0x0C);
-          commandWrite(0xC0);  //moves the cursor to the second
-          delay_ms(500);
+
+          commandWrite(0x0C); //turn off blinking cursor
+          commandWrite(0x80);
+
+          //Prints time to LCD
           sprintf(buffer, "%d:%02d:%02d %cM                     ", displayhour, clock.minute, clock.second, clock.daynight);
-          // commandWrite(0x0C); //Prints to line 1 of LCD
           for (i = 0; i < 16; i++)
             dataWrite(buffer[i]);
-          //commandWrite(0xC0); //Prints to line 2 of LCD
 
-           commandWrite(0x90); //prints to line 3 of the LCD
+          //Prints Alarm status to LCD
+          commandWrite(0xC0); //Prints to line 2 of LCD
               if(enablealarmflag==1)
-                 sprintf(buffer, "Alarm On");
+                 sprintf(buffer, "      Alarm  On    ");
               if(enablealarmflag==0)
-                 sprintf(buffer, "Alarm Off");
+                 sprintf(buffer, "      Alarm  Off    ");
            for(i=0; i<16; i++)
               dataWrite(buffer[i]);
-          //TEMP SENSOR CODE
+
+           //Prints Alarm set time to LCD
+           sprintf(buffer, "%d:%02d:%02d %cM                     ", alarm.hour, alarm.minute, alarm.second, clock.daynight);
+                      commandWrite(0x90); //Prints to line 2 of LCD
+                     for (i = 0; i < 16; i++)
+                       dataWrite(buffer[i]);
+
+          //Prints Temp sensor status to LCD
           commandWrite(0xD0); //Prints to line 4 of LCD
 
           ADC14->CTL0 |= 1;  //Start conversion
