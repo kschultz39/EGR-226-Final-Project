@@ -34,6 +34,8 @@ void sethour(void);
 void setminute(void);
 void PORT1_IRQHandler();
 int alarmflag = 0;
+int snoozeflag=0;
+int enablealarmflag=0;
 int setflag = 0;
 
 int displayhour = 0;
@@ -271,8 +273,7 @@ enum states
   SETMINUTEALARM,
 };
 
-void main(void)
-{
+void main(void){
 
   WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD; //stop watchdog timer
   InitializeAll();
@@ -414,8 +415,8 @@ void main(void)
         //RTC CLOCK
         if (time_update) {
           time_update = 0;
-           
-           
+
+
              //TRYING STUFF
 //                  displayminute = clock.minute;
 //                  displaysecond = clock.second;
@@ -445,7 +446,7 @@ void main(void)
 //                                           displayhour = clock.hour;
 //                                           displaysecond = clock.second;
                                        }
-           
+
           if (clock.hour > 12)
           {
             displayhour = (clock.hour) - (12);
@@ -458,20 +459,34 @@ void main(void)
             clock.daynight = 'A';
           }
 
-
+          //Prints time to CCS
           printf("   %02d:%02d:%02d %cM\n", displayhour, clock.minute, clock.second, clock.daynight);
-          commandWrite(0x0F); //turn off blinking cursor
-          commandWrite(0x0C);
-          commandWrite(0xC0);  //moves the cursor to the second
-          delay_ms(500);
+
+          commandWrite(0x0C); //turn off blinking cursor
+          commandWrite(0x80);
+
+          //Prints time to LCD
           sprintf(buffer, "%d:%02d:%02d %cM                     ", displayhour, clock.minute, clock.second, clock.daynight);
-          // commandWrite(0x0C); //Prints to line 1 of LCD
           for (i = 0; i < 16; i++)
             dataWrite(buffer[i]);
-          //commandWrite(0xC0); //Prints to line 2 of LCD
 
-          //TEMP SENSOR CODE
-          commandWrite(0xD0); //Prints to line 3 of LCD
+          //Prints Alarm status to LCD
+          commandWrite(0xC0); //Prints to line 2 of LCD
+              if(enablealarmflag==1)
+                 sprintf(buffer, "      Alarm  On    ");
+              if(enablealarmflag==0)
+                 sprintf(buffer, "      Alarm  Off    ");
+           for(i=0; i<16; i++)
+              dataWrite(buffer[i]);
+
+           //Prints Alarm set time to LCD
+           sprintf(buffer, "%d:%02d:%02d %cM                     ", alarm.hour, alarm.minute, alarm.second, clock.daynight);
+                      commandWrite(0x90); //Prints to line 2 of LCD
+                     for (i = 0; i < 16; i++)
+                       dataWrite(buffer[i]);
+
+          //Prints Temp sensor status to LCD
+          commandWrite(0xD0); //Prints to line 4 of LCD
 
           ADC14->CTL0 |= 1;  //Start conversion
           while (!ADC14->IFGR0);  // wait till conversion completes  read is ADC14IFGRO
@@ -499,7 +514,7 @@ void main(void)
 
 
             SetupTimer32s();   //FOR SOUNDER ALARMInitializes Timer32_1 as a non-interrupt timer and Timer32_2 as a interrupt timers.  Also initializes TimerA and P2.4 for music generation.
-
+            alarmflag=0;
             alarm_update = 0;
 
             // state = DEFAULT;
@@ -541,6 +556,7 @@ void main(void)
             alarm.daynight = daynight;
             printf("Alarm set to %d: %2d", alarm.hour, alarm.minute );
             RTC_Init();
+            enablealarmflag=1;
             state = DEFAULT;
           }
           break;
@@ -856,7 +872,7 @@ void PORT1_IRQHandler(void)
     setflag = 2;
     printf("1.7 pressed");
   }
-   
+
      //Add both buttons here setflag =3 and set falg = 2 added from Zuidemas advanced RTC code
     if(P1->IFG & BIT1) {                                //If P1.1 had an interrupt
             display_state = 1;
@@ -864,7 +880,7 @@ void PORT1_IRQHandler(void)
         if(P1->IFG & BIT4) {                                //If P1.4 had an interrupt
             display_state = 0;
         }
-   
+
   P1->IFG = 0;                                        //Clear all flags
 }
 
