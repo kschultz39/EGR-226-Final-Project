@@ -30,8 +30,11 @@ char blinkminute[50];
 char hourdisplay[50];
 char minutedisplay[50];
 
-void sethour(void);
-void setminute(void);
+void sethourclock(void);
+void setminuteclock(void);
+void sethouralarm(void);
+void setminutealarm(void);
+
 void PORT1_IRQHandler();
 int alarmflag = 0;
 int snoozeflag=0;
@@ -262,6 +265,12 @@ uint8_t hours, mins, secs;
    // display_state 0=show time, 1= show alarm
    int display_state = 0;
 
+//LED STUFF FOR WAKEUP LIGHTS
+   int PWMBlue=0; //global variable for blue PWM value
+   //int LEDFlag=1; //global variable for LEDFlag
+
+   int alarmminutesLED = 0;
+
 void RTC_Init();
 enum states
 {
@@ -422,6 +431,8 @@ void main(void){
 //                  displaysecond = clock.second;
                   //displayhour = clock.hour;
 
+                    //alarmmintuesLED = alarm.minute - 5;
+
                   //ADVANCE TIME STUFF
                            if(display_state == 1)
                                //time advnaces 1 minute per second
@@ -508,14 +519,39 @@ void main(void){
           dataWrite('F');
 
 
+
           if (alarm_update)
           {
             printf("ALARM\n");
 
 
-            SetupTimer32s();   //FOR SOUNDER ALARMInitializes Timer32_1 as a non-interrupt timer and Timer32_2 as a interrupt timers.  Also initializes TimerA and P2.4 for music generation.
+           // SetupTimer32s();   //FOR SOUNDER ALARMInitializes Timer32_1 as a non-interrupt timer and Timer32_2 as a interrupt timers.  Also initializes TimerA and P2.4 for music generation.
             alarmflag=0;
             alarm_update = 0;
+
+            //LED STUFF, ALL COMMENTED OUT
+            //Blue PWM LED is P7.6 and TA1.2
+            if( PWMBlue >= 0 && PWMBlue <= 100)
+            {
+                int i;
+                for (i = 0; i < 100; i++)
+                {
+                    __delay_cycles(9000000);
+                    PWMBlue += 1;
+                    printf("%d Percent Brightness\n", PWMBlue);
+
+                    //BLUE PWM LED is P7.6 and TA1.2
+                    TIMER_A1->CCR[2] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+
+                    //BLUE PWM LED is P7.5 and TA1.3
+                    TIMER_A1->CCR[3] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+
+                }
+
+            }
+
+
+
 
             // state = DEFAULT;
 
@@ -536,7 +572,7 @@ void main(void){
         case SETHOURALARM:
           printf("Setting hour\n");
           setflag = 0;
-          sethour();
+          sethouralarm();
           if (setflag == 1)
           {
             printf("State: Set minute alarm\n");
@@ -547,7 +583,7 @@ void main(void){
         case SETMINUTEALARM:
           printf("Setting Minute Alarm\n");
           setflag = 0;
-          setminute();
+          setminutealarm();
           if (setflag == 1)
           {
             printf("State: Default\n");
@@ -563,7 +599,7 @@ void main(void){
         case SETHOURCLOCK:
           printf("setting hour clock\n");
           setflag = 0;
-          sethour();
+          sethourclock();
           if (setflag == 2)
           {
             printf("State: Set minute alarm\n");
@@ -573,7 +609,7 @@ void main(void){
         case SETMINUTECLOCK:
           printf("Setting Minute clock\n");
           setflag = 0;
-          setminute();
+          setminuteclock();
           if (setflag == 2)
           {
             printf("State: Default\n");
@@ -714,6 +750,25 @@ void InitializeAll(void)
   EUSCI_A0->IFG &= ~BIT0;    // Clear interrupt
   EUSCI_A0->IE |= BIT0;      // Enable interrupt
   NVIC_EnableIRQ(EUSCIA0_IRQn);
+
+
+  //LED INIT FOR WAKE UP
+  //Pin enables for PWM LEDs (Referencing code from Zuidema In-class example Week 5 part 1)
+        P7->SEL0 |= (BIT5|BIT6); //sets SEL0=1;
+        P7->SEL1 &= (BIT5|BIT6);  //SEL1 = 0. Setting SEL0=1 and SEL1=0 activates PWM function
+        P7->DIR |= (BIT5|BIT6);    // Set pins as  PWM output.
+        P7->OUT &= ~(BIT5|BIT6);
+
+        TIMER_A1->CCR[0] = 999;  //1000 clocks = 0.333 ms.  This is the period of everything on Timer A1.  0.333 < 16.666 ms so the on/off shouldn't
+                                     //be visible with the human eye.  1000 makes easy math to calculate duty cycle.  No particular reason to use 1000.
+
+        TIMER_A1->CCTL[2] = 0b0000000011100000;  //reset / set compare.   Duty Cycle = CCR[1]/CCR[0].
+        TIMER_A1->CCR[2] = 0;  //P7.6 initialize to 0% duty cycle
+        TIMER_A1->CCTL[3] = 0b0000000011100000;
+        TIMER_A1->CCR[3] = 0;  //P7.5 intialize to 0% duty cycle
+
+        //The next line turns on all of Timer A1.  None of the above will do anything until Timer A1 is started.
+        TIMER_A1->CTL = 0b0000001000010100;
 
 }
 //This function goes through the entire initialization sequence as shown in Figure 4
@@ -1138,7 +1193,7 @@ void RTC_Init()
 }
 
 
-void sethour(void)
+void sethourclock(void)
 {
   int i = 0;
   int pva_up=0;
@@ -1146,16 +1201,21 @@ void sethour(void)
   while (setflag == 0)
 
   {
+
+
     if (!((P5->IN & BIT1) == BIT1))
     {
       if (hour == 11)
       {
-        hour=12;
-        daynight= 'P';
+          hour = 12;
+                 if(daynight=='P')
+                     daynight= 'A';
+                 else if(daynight=='A')
+                     daynight='P';
 
         printf("HOURINC: %d\n", hour);
         sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
-        commandWrite(0xC0);
+        commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(hourdisplay[i]);
         __delay_cycles(300000);
@@ -1166,29 +1226,18 @@ void sethour(void)
       {
           if(hour==12)
               {
-              if(pva_up==1)
-              { hour=1;
-              daynight= 'P';
-              }
 
-              if(pva_up==2)
-              {
-                  hour=1;
-                  daynight= 'A';
-                  pva_up=0;
-              }
+              hour=1;
+
 
               }
           else if(hour!=12)
               hour += 1;
         printf("HOURINC: %d\n", hour);
         __delay_cycles(300000);
-//        if (hour == 12)
-//        {
-//          daynight = 'P';
-//        }
+
         sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
-        commandWrite(0xC0);
+        commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(hourdisplay[i]);
 
@@ -1200,12 +1249,16 @@ void sethour(void)
       if (hour == 1)
       {
         hour = 12;
+        if(daynight=='P')
+            daynight= 'A';
+        else if(daynight=='A')
+            daynight='P';
 
 
 
         printf("HOURDEC: %d\n", hour);
         sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
-        commandWrite(0xC0);
+        commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(hourdisplay[i]);
         __delay_cycles(300000);
@@ -1215,32 +1268,18 @@ void sethour(void)
       }
       else if (hour != 1)
       {
-          if(hour==12)
-                        {
 
-                      if(pva_down==1)
-                        { hour=11;
-                        daynight= 'P';
-                        }
 
-                        if(pva_down==2)
-                        {
-                            hour=11;
-                            daynight= 'A';
-                            pva_down=0;
-                        }
 
-                        }
-          else if(hour!=12)
-
-          { hour -= 1;
-
-          }
+//
+       hour -= 1;
+//
+//          }
         printf("HOURDEC: %d\n", hour);
         __delay_cycles(300000);
 
         sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
-        commandWrite(0xC0);
+        commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(hourdisplay[i]);
       }
@@ -1264,7 +1303,7 @@ void sethour(void)
 
   }
 }
-void setminute(void)
+void setminuteclock(void)
 {
   int i = 0;
   while (setflag == 0)
@@ -1277,7 +1316,7 @@ void setminute(void)
         minute = 0;
         __delay_cycles(300000);
         sprintf(minutedisplay, "%d: %2d:%2d %cM", hour, minute, second, daynight);
-        commandWrite(0xC0);
+        commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
         printf("MININC: %d\n", minute);
@@ -1286,7 +1325,7 @@ void setminute(void)
       {
         minute += 1;
         sprintf(minutedisplay, "%d: %2d:%2d %cM", hour, minute, second, daynight);
-        commandWrite(0xC0);
+        commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
         printf("MININC: %d\n", minute);
@@ -1304,7 +1343,7 @@ void setminute(void)
         minute = 59;
         printf("MINDEC: %d\n", minute);
         sprintf(minutedisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
-        commandWrite(0xC0);
+        commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
         __delay_cycles(300000);
@@ -1315,7 +1354,7 @@ void setminute(void)
         minute -= 1;
         printf("MINDEC: %d\n", minute);
         sprintf(minutedisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
-        commandWrite(0xC0);
+        commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
         __delay_cycles(300000);
@@ -1341,3 +1380,191 @@ void setminute(void)
 
   }
 }
+void sethouralarm(void)
+{
+  int i = 0;
+  int pva_up=0;
+  int pva_down=0;
+  while (setflag == 0)
+
+  {
+
+
+    if (!((P5->IN & BIT1) == BIT1))
+    {
+      if (hour == 11)
+      {
+          hour = 12;
+                 if(daynight=='P')
+                     daynight= 'A';
+                 else if(daynight=='A')
+                     daynight='P';
+
+        printf("HOURINC: %d\n", hour);
+        sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        commandWrite(0x80);
+        for (i = 0; i < 10; i++)
+          dataWrite(hourdisplay[i]);
+        __delay_cycles(300000);
+        pva_up+=1;
+
+      }
+      else if (hour != 11)
+      {
+          if(hour==12)
+              {
+
+              hour=1;
+
+
+              }
+          else if(hour!=12)
+              hour += 1;
+        printf("HOURINC: %d\n", hour);
+        __delay_cycles(300000);
+
+        sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        commandWrite(0x90);
+        for (i = 0; i < 10; i++)
+          dataWrite(hourdisplay[i]);
+
+      }
+    }
+
+    if (!((P5->IN & BIT2) == BIT2))
+    {
+      if (hour == 1)
+      {
+        hour = 12;
+        if(daynight=='P')
+            daynight= 'A';
+        else if(daynight=='A')
+            daynight='P';
+
+
+
+        printf("HOURDEC: %d\n", hour);
+        sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        commandWrite(0x90);
+        for (i = 0; i < 10; i++)
+          dataWrite(hourdisplay[i]);
+        __delay_cycles(300000);
+        pva_down+=1;
+
+
+      }
+      else if (hour != 1)
+      {
+
+
+
+//
+       hour -= 1;
+//
+//          }
+        printf("HOURDEC: %d\n", hour);
+        __delay_cycles(300000);
+
+        sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        commandWrite(0x90);
+        for (i = 0; i < 10; i++)
+          dataWrite(hourdisplay[i]);
+      }
+
+    }
+
+//    while (((((P5->IN & BIT1) == BIT1)) && ((P5->IN & BIT2) == BIT2)))
+//    {
+//    sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+//    commandWrite(0xC0);
+//    for (i = 0; i < 10; i++)
+//      dataWrite(hourdisplay[i]);
+//    __delay_cycles(300000);
+//    sprintf(blinkhour, "  :%2d:%2d", minute, second);
+//    commandWrite(0xC0);
+//    for (i = 0; i < 10; i++)
+//      dataWrite(blinkhour[i]);
+//    __delay_cycles(300000);
+//    }
+
+
+  }
+}
+void setminutealarm(void)
+{
+  int i = 0;
+  while (setflag == 0)
+
+  {
+    if (!((P5->IN & BIT1) == BIT1))
+    {
+      if (minute == 59)
+      {
+        minute = 0;
+        __delay_cycles(300000);
+        sprintf(minutedisplay, "%d: %2d:%2d %cM", hour, minute, second, daynight);
+        commandWrite(0x90);
+        for (i = 0; i < 10; i++)
+          dataWrite(minutedisplay[i]);
+        printf("MININC: %d\n", minute);
+      }
+      else if (minute != 59)
+      {
+        minute += 1;
+        sprintf(minutedisplay, "%d: %2d:%2d %cM", hour, minute, second, daynight);
+        commandWrite(0x90);
+        for (i = 0; i < 10; i++)
+          dataWrite(minutedisplay[i]);
+        printf("MININC: %d\n", minute);
+        __delay_cycles(300000);
+
+
+
+      }
+    }
+
+    if (!((P5->IN & BIT2) == BIT2))
+    {
+      if (minute == 0)
+      {
+        minute = 59;
+        printf("MINDEC: %d\n", minute);
+        sprintf(minutedisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        commandWrite(0x90);
+        for (i = 0; i < 10; i++)
+          dataWrite(minutedisplay[i]);
+        __delay_cycles(300000);
+
+      }
+      else if (minute != 0)
+      {
+        minute -= 1;
+        printf("MINDEC: %d\n", minute);
+        sprintf(minutedisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        commandWrite(0x90);
+        for (i = 0; i < 10; i++)
+          dataWrite(minutedisplay[i]);
+        __delay_cycles(300000);
+
+      }
+
+    }
+
+//    while (((((P5->IN & BIT1) == BIT1)) && ((P5->IN & BIT2) == BIT2))){
+//    commandWrite(0xC0);
+//    sprintf(minutedisplay, "%d:%2d:%2d", hour, minute, second);
+//
+//    for (i = 0; i < 10; i++)
+//      dataWrite(minutedisplay[i]);
+//    __delay_cycles(300000);
+//    commandWrite(0xC0);
+//    sprintf(blinkminute, "%d:  :%2d", hour, second);
+//    for (i = 0; i < 11; i++)
+//      dataWrite(blinkminute[i]);
+//    __delay_cycles(300000);
+//    }
+
+
+  }
+}
+
