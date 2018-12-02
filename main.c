@@ -45,6 +45,7 @@ int displayhour = 0;
 int displayminute = 0;
 int displaysecond = 0;
 int result = 0;
+int houralarmchanged=0;
 
 int hour = 0;
 int minute = 0;
@@ -354,6 +355,7 @@ void main(void){
         // printf("Alarm set to %d: %2d\n", alarm.hour, alarm.minute);
         //printf("Clock set to %d: %d\n", clock.hour, clock.minute);
 
+
         //SERIAL READ STUFF//////////////////////////
         if (Serial_flag)
         {
@@ -394,6 +396,7 @@ void main(void){
               writeOutput(string);
               writeOutput("\n");
               RTC_Init();
+              enablealarmflag=1;
             }
 
             //READ Current time through serial
@@ -426,37 +429,37 @@ void main(void){
           time_update = 0;
 
 
-             //TRYING STUFF
-//                  displayminute = clock.minute;
-//                  displaysecond = clock.second;
-                  //displayhour = clock.hour;
-
-                    //alarmmintuesLED = alarm.minute - 5;
-
-                  //ADVANCE TIME STUFF
-                           if(display_state == 1)
-                               //time advnaces 1 minute per second
-                           {
-                               clock.hour = clock.minute;
-                               clock.minute = clock.second;
-
-                               printf("   %02d:%02d:00 %cM\n", clock.hour, clock.minute, clock.daynight);
-//                                  displayminute=clock.second;
-//                                  if(displayminute == 0)
-//                                  {
-//                                      clock.hour += 1;
-//                                  }
-//                                   displaysecond = 0;
-                           }
-
-                                       if(display_state == 0)
-                                       {
-                                           printf("   %02d:%02d:%02d %cM\n", clock.hour, clock.minute, clock.second, clock.daynight);
-//                                          //time returns to normal
-//                                           displayminute = clock.minute;
-//                                           displayhour = clock.hour;
-//                                           displaysecond = clock.second;
-                                       }
+//             //TRYING STUFF
+////                  displayminute = clock.minute;
+////                  displaysecond = clock.second;
+//                  //displayhour = clock.hour;
+//
+//                    //alarmmintuesLED = alarm.minute - 5;
+//
+//                  //ADVANCE TIME STUFF
+//                           if(display_state == 1)
+//                               //time advnaces 1 minute per second
+//                           {
+//                               clock.hour = clock.minute;
+//                               clock.minute = clock.second;
+//
+//                               printf("   %02d:%02d:00 %cM\n", clock.hour, clock.minute, clock.daynight);
+////                                  displayminute=clock.second;
+////                                  if(displayminute == 0)
+////                                  {
+////                                      clock.hour += 1;
+////                                  }
+////                                   displaysecond = 0;
+//                           }
+//
+//                                       if(display_state == 0)
+//                                       {
+//                                           printf("   %02d:%02d:%02d %cM\n", clock.hour, clock.minute, clock.second, clock.daynight);
+////                                          //time returns to normal
+////                                           displayminute = clock.minute;
+////                                           displayhour = clock.hour;
+////                                           displaysecond = clock.second;
+//                                       }
 
           if (clock.hour > 12)
           {
@@ -469,6 +472,29 @@ void main(void){
 
             clock.daynight = 'A';
           }
+
+          if (alarm.hour > 12)
+                    {
+                      alarm.hour = (alarm.hour) - (12);
+                      alarm.daynight = 'P';
+                    }
+                    else
+                    {
+                      displayhour = (alarm.hour);
+
+                      clock.daynight = 'A';
+                    }
+
+          if (!((P5->IN & BIT1) == BIT1)) //On/Off/Up
+                 {
+                      printf("On/off/up pressed in default");
+                     if(enablealarmflag==1 || enablealarmflag==3)
+                         enablealarmflag=0; //disable alarm
+                     else if(enablealarmflag==0)
+                         enablealarmflag=1; //enable alarm
+
+                 }
+
 
           //Prints time to CCS
           printf("   %02d:%02d:%02d %cM\n", displayhour, clock.minute, clock.second, clock.daynight);
@@ -484,9 +510,11 @@ void main(void){
           //Prints Alarm status to LCD
           commandWrite(0xC0); //Prints to line 2 of LCD
               if(enablealarmflag==1)
-                 sprintf(buffer, "      Alarm  On    ");
+                 sprintf(buffer, "    Alarm  On    ");
               if(enablealarmflag==0)
-                 sprintf(buffer, "      Alarm  Off    ");
+                 sprintf(buffer, "    Alarm  Off    ");
+              if(enablealarmflag==3)
+                  sprintf(buffer, "    SNOOZE         ");
            for(i=0; i<16; i++)
               dataWrite(buffer[i]);
 
@@ -522,38 +550,98 @@ void main(void){
 
           if (alarm_update)
           {
-            printf("ALARM\n");
 
-
-           // SetupTimer32s();   //FOR SOUNDER ALARMInitializes Timer32_1 as a non-interrupt timer and Timer32_2 as a interrupt timers.  Also initializes TimerA and P2.4 for music generation.
-            alarmflag=0;
-            alarm_update = 0;
-
-            //LED STUFF, ALL COMMENTED OUT
-            //Blue PWM LED is P7.6 and TA1.2
-            if( PWMBlue >= 0 && PWMBlue <= 100)
+              if(enablealarmflag==1 || enablealarmflag==3)
             {
-                int i;
-                for (i = 0; i < 100; i++)
-                {
-                    __delay_cycles(9000000);
-                    PWMBlue += 1;
-                    printf("%d Percent Brightness\n", PWMBlue);
+                  while(alarm_update==1)
+                      {
+                      printf("ALARM\n");
 
-                    //BLUE PWM LED is P7.6 and TA1.2
-                    TIMER_A1->CCR[2] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+                      if (!((P5->IN & BIT2) == BIT2)) //Snooze/Down Pressed
+                                  {
+                                      printf("Snooze/Down Pressed during alarm");
+                                      PWMBlue=0;
+                                      enablealarmflag=3;
+                                      snoozeflag=1;
+                                      alarm.minute= alarm.minute+10; //set new snooze alarm for 10 minutes after current alarm
+                                      if(alarm.minute>=60)
+                                          {
+                                          alarm.minute= (alarm.minute-60);
+                                          alarm.hour+=1;
+                                          houralarmchanged=1;
+                                          }
 
-                    //BLUE PWM LED is P7.5 and TA1.3
-                    TIMER_A1->CCR[3] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+                                      RTC_Init();
+                                      alarm_update=0;
 
-                }
+                                  }
+                                  if (!((P5->IN & BIT1) == BIT1)) //On/Off/Up
+                                  {
+                                      printf("On/off/Up pressed during alarm");
+
+
+                                      if(snoozeflag)
+                                      {
+
+                                          if(houralarmchanged)
+                                          {
+                                              alarm.hour-=1;
+                                              alarm.minute= (alarm.minute+60)-10;
+                                              houralarmchanged=0;
+
+                                          }
+                                          else if (houralarmchanged!=1)
+                                              alarm.minute= alarm.minute-10;
+                                          RTC_Init();
+                                          snoozeflag=0;
+                                          //enablealarmflag=1;
+                                          __delay_cycles(3000000);
+                                      }
+
+                                      enablealarmflag=1;
+                                      alarm_update=0;
+                                  }
+
+                      }
+
+
+
+//           // SetupTimer32s();   //FOR SOUNDER ALARMInitializes Timer32_1 as a non-interrupt timer and Timer32_2 as a interrupt timers.  Also initializes TimerA and P2.4 for music generation.
+//            //alarmflag=0;
+//
+//
+//            //LED STUFF, ALL COMMENTED OUT
+//            //Blue PWM LED is P7.6 and TA1.2
+//            if( PWMBlue >= 0 && PWMBlue <= 100)
+//            {
+//                int i;
+//                for (i = 0; i < 100; i++)
+//                {
+//                    __delay_cycles(9000000);
+//                    PWMBlue += 1;
+//                    printf("%d Percent Brightness\n", PWMBlue);
+//
+//                    //BLUE PWM LED is P7.6 and TA1.2
+//                    TIMER_A1->CCR[2] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+//
+//                    //BLUE PWM LED is P7.5 and TA1.3
+//                    TIMER_A1->CCR[3] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+//
+//                }
+//
+//            }
+//
+//
 
             }
-
-
-
+              else if(enablealarmflag==0)
+              {
+                  printf("Alarm currently disabled");
+                  alarm_update=0;
+              }
 
             // state = DEFAULT;
+
 
           }
 
@@ -593,6 +681,7 @@ void main(void){
             printf("Alarm set to %d: %2d", alarm.hour, alarm.minute );
             RTC_Init();
             enablealarmflag=1;
+            alarmflag=1;
             state = DEFAULT;
           }
           break;
@@ -602,7 +691,7 @@ void main(void){
           sethourclock();
           if (setflag == 2)
           {
-            printf("State: Set minute alarm\n");
+            printf("State: Set minute clock\n");
             state = SETMINUTECLOCK;
           }
           break;
@@ -616,7 +705,7 @@ void main(void){
             clock.hour = hour;
             clock.minute = minute;
             clock.daynight = daynight;
-            printf("Alarm set to %d: %2d", clock.hour, clock.minute );
+            printf("Clock set to %d: %2d", clock.hour, clock.minute );
             RTC_Init();
             state = DEFAULT;
           }
@@ -928,15 +1017,15 @@ void PORT1_IRQHandler(void)
     printf("1.7 pressed");
   }
 
-     //Add both buttons here setflag =3 and set falg = 2 added from Zuidemas advanced RTC code
-    if(P1->IFG & BIT1) {                                //If P1.1 had an interrupt
-            display_state = 1;
-        }
-        if(P1->IFG & BIT4) {                                //If P1.4 had an interrupt
-            display_state = 0;
-        }
-
-  P1->IFG = 0;                                        //Clear all flags
+//     //Add both buttons here setflag =3 and set falg = 2 added from Zuidemas advanced RTC code
+//    if(P1->IFG & BIT1) {                                //If P1.1 had an interrupt
+//            display_state = 1;
+//        }
+//        if(P1->IFG & BIT4) {                                //If P1.4 had an interrupt
+//            display_state = 0;
+//        }
+//
+ P1->IFG = 0;                                        //Clear all flags
 }
 
 void RTC_C_IRQHandler()
@@ -1315,7 +1404,7 @@ void setminuteclock(void)
       {
         minute = 0;
         __delay_cycles(300000);
-        sprintf(minutedisplay, "%d: %2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(minutedisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
         commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
@@ -1324,7 +1413,7 @@ void setminuteclock(void)
       else if (minute != 59)
       {
         minute += 1;
-        sprintf(minutedisplay, "%d: %2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(minutedisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
         commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
@@ -1402,7 +1491,7 @@ void sethouralarm(void)
 
         printf("HOURINC: %d\n", hour);
         sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
-        commandWrite(0x80);
+        commandWrite(0x90);
         for (i = 0; i < 10; i++)
           dataWrite(hourdisplay[i]);
         __delay_cycles(300000);
@@ -1423,7 +1512,7 @@ void sethouralarm(void)
         printf("HOURINC: %d\n", hour);
         __delay_cycles(300000);
 
-        sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(hourdisplay, "%d:%02d:%02d %cM                     ", hour, minute, second, daynight);
         commandWrite(0x90);
         for (i = 0; i < 10; i++)
           dataWrite(hourdisplay[i]);
@@ -1444,7 +1533,7 @@ void sethouralarm(void)
 
 
         printf("HOURDEC: %d\n", hour);
-        sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(hourdisplay, "%d:%02d:%02d %cM                     ", hour, minute, second, daynight);
         commandWrite(0x90);
         for (i = 0; i < 10; i++)
           dataWrite(hourdisplay[i]);
@@ -1465,7 +1554,7 @@ void sethouralarm(void)
         printf("HOURDEC: %d\n", hour);
         __delay_cycles(300000);
 
-        sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(hourdisplay, "%d:%02d:%02d %cM                     ", hour, minute, second, daynight);
         commandWrite(0x90);
         for (i = 0; i < 10; i++)
           dataWrite(hourdisplay[i]);
@@ -1502,7 +1591,7 @@ void setminutealarm(void)
       {
         minute = 0;
         __delay_cycles(300000);
-        sprintf(minutedisplay, "%d: %2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(minutedisplay, "%d:%02d:%02d %cM                     ", hour, minute, second, daynight);
         commandWrite(0x90);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
@@ -1511,7 +1600,7 @@ void setminutealarm(void)
       else if (minute != 59)
       {
         minute += 1;
-        sprintf(minutedisplay, "%d: %2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(minutedisplay, "%d:%02d:%02d %cM                     ", hour, minute, second, daynight);
         commandWrite(0x90);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
@@ -1529,7 +1618,7 @@ void setminutealarm(void)
       {
         minute = 59;
         printf("MINDEC: %d\n", minute);
-        sprintf(minutedisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(minutedisplay, "%d:%02d:%02d %cM                     ", hour, minute, second, daynight);
         commandWrite(0x90);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
@@ -1540,7 +1629,7 @@ void setminutealarm(void)
       {
         minute -= 1;
         printf("MINDEC: %d\n", minute);
-        sprintf(minutedisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(minutedisplay, "%d:%02d:%02d %cM                     ", hour, minute, second, daynight);
         commandWrite(0x90);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
