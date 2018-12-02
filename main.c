@@ -416,8 +416,8 @@ void main(void)
         //RTC CLOCK
         if (time_update) {
           time_update = 0;
-           
-           
+
+
              //TRYING STUFF
 //                  displayminute = clock.minute;
 //                  displaysecond = clock.second;
@@ -447,7 +447,7 @@ void main(void)
 //                                           displayhour = clock.hour;
 //                                           displaysecond = clock.second;
                                        }
-           
+
           if (clock.hour > 12)
           {
             displayhour = (clock.hour) - (12);
@@ -472,10 +472,10 @@ void main(void)
             dataWrite(buffer[i]);
           //commandWrite(0xC0); //Prints to line 2 of LCD
 
-           commandWrite(0x90) //prints to line 3 of the LCD
+           commandWrite(0x90); //prints to line 3 of the LCD
               if(enablealarmflag==1)
                  sprintf(buffer, "Alarm On");
-              if(enablealarm==0)
+              if(enablealarmflag==0)
                  sprintf(buffer, "Alarm Off");
            for(i=0; i<16; i++)
               dataWrite(buffer[i]);
@@ -550,7 +550,7 @@ void main(void)
             alarm.daynight = daynight;
             printf("Alarm set to %d: %2d", alarm.hour, alarm.minute );
             RTC_Init();
-            alarmflag=1;
+            enablealarmflag=1;
             state = DEFAULT;
           }
           break;
@@ -866,7 +866,7 @@ void PORT1_IRQHandler(void)
     setflag = 2;
     printf("1.7 pressed");
   }
-   
+
      //Add both buttons here setflag =3 and set falg = 2 added from Zuidemas advanced RTC code
     if(P1->IFG & BIT1) {                                //If P1.1 had an interrupt
             display_state = 1;
@@ -874,7 +874,7 @@ void PORT1_IRQHandler(void)
         if(P1->IFG & BIT4) {                                //If P1.4 had an interrupt
             display_state = 0;
         }
-   
+
   P1->IFG = 0;                                        //Clear all flags
 }
 
