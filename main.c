@@ -2,6 +2,7 @@
 #include "msp432.h"
 #include <stdio.h>
 #include "math.h"
+#include "stdlib.h""
 
 
 
@@ -126,121 +127,122 @@ int breath = 0;     //Take a breath after each note.  This creates seperation
 float music_note_sequence[][2] = {  // Deck the halls song
 
   //FIRST
-  {C5, QUARTERPLUS},
-  {B4, EIGHTH},
-  {A4, QUARTER},
-  {G4, QUARTER},
-
-  //SECOND
-  {F4, QUARTER},
-  {G4, QUARTER},
-  {A4, QUARTER},
-  {F4, QUARTER},
-
-  //THIRD
-  {G4, EIGHTH},
-  {A4, EIGHTH},
-  {B4, EIGHTH},
-  {G4, EIGHTH},
-  {A4, QUARTER},
-  {G4, EIGHTH},
-
-  //FOURTH
-  {F4, QUARTER},
-  {E4, QUARTER},
-  {F4, HALF},
-
-
-  //////////////////////////////////Second line of music/////////////////////////////////////////
-
-  //FIRST
-  {C5, QUARTERPLUS},
-  {B4, EIGHTH},
-  {A4, QUARTER},
-  {G4, QUARTER},
-
-
-  //SECOND
-  {F4, QUARTER},
-  {G4, QUARTER},
-  {A4, QUARTER},
-  {F4, QUARTER},
-
-  //THIRD
-  {G4, EIGHTH},
-  {A4, EIGHTH},
-  {B4, EIGHTH},
-  {G4, EIGHTH},
-  {A4, QUARTER},
-  {G4, EIGHTH},
-
-  //FOURTH
-  {F4, QUARTER},
-  {E4, QUARTER},
-  {F4, HALF},
-
-  ////////////////////////////////Third line of music/////////////////////////////////////////
-
-  //First
-  {G4, QUARTERPLUS},
-  {A4, EIGHTH},
-  {B4, QUARTER},
-  {G4, QUARTER},
-
-  //Second
-  {A4, QUARTERPLUS},
-  {B4, EIGHTH},
-  {C5, QUARTER},
-  {G4, QUARTER},
-
-
-  //Third
-  {A4, EIGHTH},
-  {B4, EIGHTH},
-  {C5, QUARTER},
-  {D5, EIGHTH},
-  {E5, EIGHTH},
-  {F5, QUARTER},
-
-  //Fourth
-  {E5, QUARTER},
-  {D5, QUARTER},
-  {C5, HALF},
-
-
-  ////////////////////////////////Fourth line of music/////////////////////////////////////////
-
-  //First
-  {C5, QUARTERPLUS},
-  {B4, EIGHTH},
-  {A4, QUARTER},
-  {G4, QUARTER},
-
-  //Second
-  {F4, QUARTER},
-  {G4, QUARTER},
-  {A4, QUARTER},
-  {F4, QUARTER},
-
-
-  //THIRD
-
-  {D5, EIGHTH},
-  {D5, EIGHTH},
-  {D5, EIGHTH},
-  {D5, EIGHTH},
-  {C5, QUARTERPLUS},
-  {B4, EIGHTH},
-
-
-  //FOURTH
-
-  {A4, QUARTER},
-  {G4, QUARTER},
-  {F4, HALF},
-
+  {C5, WHOLE},
   {REST, WHOLE},
-  {REST, WHOLE},
+//  {B4, EIGHTH},
+//  {A4, QUARTER},
+//  {G4, QUARTER},
+//
+//  //SECOND
+//  {F4, QUARTER},
+//  {G4, QUARTER},
+//  {A4, QUARTER},
+//  {F4, QUARTER},
+//
+//  //THIRD
+//  {G4, EIGHTH},
+//  {A4, EIGHTH},
+//  {B4, EIGHTH},
+//  {G4, EIGHTH},
+//  {A4, QUARTER},
+//  {G4, EIGHTH},
+//
+//  //FOURTH
+//  {F4, QUARTER},
+//  {E4, QUARTER},
+//  {F4, HALF},
+//
+//
+//  //////////////////////////////////Second line of music/////////////////////////////////////////
+//
+//  //FIRST
+//  {C5, QUARTERPLUS},
+//  {B4, EIGHTH},
+//  {A4, QUARTER},
+//  {G4, QUARTER},
+//
+//
+//  //SECOND
+//  {F4, QUARTER},
+//  {G4, QUARTER},
+//  {A4, QUARTER},
+//  {F4, QUARTER},
+//
+//  //THIRD
+//  {G4, EIGHTH},
+//  {A4, EIGHTH},
+//  {B4, EIGHTH},
+//  {G4, EIGHTH},
+//  {A4, QUARTER},
+//  {G4, EIGHTH},
+//
+//  //FOURTH
+//  {F4, QUARTER},
+//  {E4, QUARTER},
+//  {F4, HALF},
+//
+//  ////////////////////////////////Third line of music/////////////////////////////////////////
+//
+//  //First
+//  {G4, QUARTERPLUS},
+//  {A4, EIGHTH},
+//  {B4, QUARTER},
+//  {G4, QUARTER},
+//
+//  //Second
+//  {A4, QUARTERPLUS},
+//  {B4, EIGHTH},
+//  {C5, QUARTER},
+//  {G4, QUARTER},
+//
+//
+//  //Third
+//  {A4, EIGHTH},
+//  {B4, EIGHTH},
+//  {C5, QUARTER},
+//  {D5, EIGHTH},
+//  {E5, EIGHTH},
+//  {F5, QUARTER},
+//
+//  //Fourth
+//  {E5, QUARTER},
+//  {D5, QUARTER},
+//  {C5, HALF},
+//
+//
+//  ////////////////////////////////Fourth line of music/////////////////////////////////////////
+//
+//  //First
+//  {C5, QUARTERPLUS},
+//  {B4, EIGHTH},
+//  {A4, QUARTER},
+//  {G4, QUARTER},
+//
+//  //Second
+//  {F4, QUARTER},
+//  {G4, QUARTER},
+//  {A4, QUARTER},
+//  {F4, QUARTER},
+//
+//
+//  //THIRD
+//
+//  {D5, EIGHTH},
+//  {D5, EIGHTH},
+//  {D5, EIGHTH},
+//  {D5, EIGHTH},
+//  {C5, QUARTERPLUS},
+//  {B4, EIGHTH},
+//
+//
+//  //FOURTH
+//
+//  {A4, QUARTER},
+//  {G4, QUARTER},
+//  {F4, HALF},
+//
+//  {REST, WHOLE},
+//  {REST, WHOLE},
 };
 
 ///SERIAL INIT CODE
@@ -313,42 +315,6 @@ void main(void){
   RTC_Init(); //enable RTC
 
   __enable_interrupt();
-
-
-
-
-  //
-  //
-  //    //TIMER 32 COUNT DOWN IN SECONDS
-  //    TIMER32_1->CONTROL = 0b11101010;  // Periodic, Wrapping, Interrupt, Divide by 256, Enabled, 32bit
-  //        TIMER32_1->LOAD = 703200-1;  //0.25 seconds @ 3MHz * 4 = 1 sec * 60 = 703200 for 60 seconds
-  //        seconds = TIMER32_1->LOAD;
-  //        second = (seconds / 11720);
-  //    //    TIMER32_1->LOAD = 1012500000-1;  //24 hours @ 3 MHz
-  //        NVIC_EnableIRQ(T32_INT1_IRQn);
-  //        __enable_interrupt();
-
-  //RTC CODE FROM LECTURE
-  // RTC_C->CTL0 = (0xA500) ;
-  //RTC_C->CTL13 = 0;
-  //    //initialize time to 2:45 pm
-  //    //RTC_C->TIM0 = 0x2000; //45 min, 0 sec
-  //    RTC_C->TIM0 = (clock.minute) << 8 | (clock.second); //45 min, 0 seconds
-  //    RTC_C->TIM1 = 1 << 8 | (clock.hour);
-  //    RTC_C->YEAR = 2018;
-  //    //Alarm set at 2:46 om
-  //    RTC_C->AMINHR = alarm.hour << 8 | alarm.minute | BIT(15) | BIT(7); //bit 15 adn 7 are alarm enable bits
-  //    RTC_C->ADOWDAY = 0;
-  //    RTC_C->PS1CTL = 0b11010; //1 second interrupt
-  //
-  //    RTC_C->CTL0 = (0xA500) | BIT5;
-  //    RTC_C-> CTL13 = 0;
-  //    NVIC_EnableIRQ(RTC_C_IRQn);
-
-
-
-
-
 
 
   enum states state = DEFAULT;
@@ -450,7 +416,7 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
  alarmminutesLED = abs(alarmminutesLED);
 
 
-
+//If time is not within 5 minutes, the lights will not come on
  if(alarmminutesLED > 500 && alarmminutesLED >= 0 )
  {
      PWMBlue = 0;
@@ -463,25 +429,20 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
 
  }
 
- if(alarmminutesLED <= 500 && alarmminutesLED >=0 )
-     //alarm.minute >= alarmminutesLED && clock.minute > alarm.minute && alarmminutesLED &&
+ //new lights function
+ if(enablealarmflag == 1 || enablealarmflag == 3)
  {
 
-//             int i = 0;
-//             i += 1;
 
-     //LED += 1; //increments every second
 
-    // printf("\n LED is %d\n", LED);
+ if(alarmminutesLED <= 500 && alarmminutesLED >=0 )
+     //alarm.minute >= alarmminutesLED && clock.minute > alarm.minute && alarmminutesLED &&
+     {
+
+
 
      if( alarm_increment)
      {
-
-         //printf("\n LED after IF is %d\n", LED);
-     //LED STUFF, ALL COMMENTED OUT
-                //Blue PWM LED is P7.6 and TA1.2
-
-
 
                             if( PWMBlue >= 0 && PWMBlue <= 100)
                             {
@@ -495,17 +456,14 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
                         TIMER_A1->CCR[3] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
 
                         alarm_increment = 0;
-//                                       if(i == 99)
-//                                       state == DEFAULT;
-                            }
 
-                           // alarm_increment = 0;
+                            }
 
                     }
 
+     }
+
  }
-
-
 
 
 
@@ -590,7 +548,13 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
                  {
                       printf("On/off/up pressed in default");
                      if(enablealarmflag==1 || enablealarmflag==3)
-                         enablealarmflag=0; //disable alarm
+                         {enablealarmflag=0; //disable alarm
+                         //BLUE PWM LED is P7.6 and TA1.2
+                             TIMER_A1->CCR[2] = 0;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+
+                             //BLUE PWM LED is P7.5 and TA1.3
+                             TIMER_A1->CCR[3] = 0;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+                         }
                      else if(enablealarmflag==0)
                          enablealarmflag=1; //enable alarm
 
@@ -648,7 +612,7 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
             dataWrite(buffer[i]);
           dataWrite('F');
 
-
+//ALARM FUNCTION
 
           if (alarm_update)
           {
@@ -657,7 +621,20 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
             {
                   while(alarm_update==1)
                       {
+
                       printf("ALARM\n");
+
+                      //ALARM ATTENTION KELLY!!!
+                      //SetupTimer32s();
+
+                      //LED AT FULL BRIGHTNESS BIG ZOGGY
+                      PWMBlue = 100;
+
+                      //BLUE PWM LED is P7.6 and TA1.2
+                      TIMER_A1->CCR[2] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+
+                     //BLUE PWM LED is P7.5 and TA1.3
+                      TIMER_A1->CCR[3] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
 
                       if (!((P5->IN & BIT2) == BIT2)) //Snooze/Down Pressed
                                   {
