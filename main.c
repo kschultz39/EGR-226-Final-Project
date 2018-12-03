@@ -352,7 +352,7 @@ void main(void){
       case DEFAULT:
         //workingclock();
         setflag = 0;
-        // printf("Alarm set to %d: %2d\n", alarm.hour, alarm.minute);
+        // printf("Alarm set to %d: %02d\n", alarm.hour, alarm.minute);
         //printf("Clock set to %d: %d\n", clock.hour, clock.minute);
 
 
@@ -405,7 +405,7 @@ void main(void){
               printf("\nRead time through Serial");
               // writeOutput("\nTHE CURRENT TIME IS\n ");
               char buffer[100];
-              sprintf(buffer, "The current Time is %2d:%2d:%2d", clock.hour, clock.minute, clock.second);
+              sprintf(buffer, "The current Time is %02d:%02d:%02d", clock.hour, clock.minute, clock.second);
               writeOutput(buffer);
             }
 
@@ -415,7 +415,7 @@ void main(void){
               printf("\nRead ALARM through Serial");
               // writeOutput("\nCURRENT ALARM IS\n  ");
               char bufferalarm[100];
-              sprintf(bufferalarm, "The the alarm time is %2d:%2d:00", alarm.hour, alarm.minute);
+              sprintf(bufferalarm, "The the alarm time is %02d:%02d:00", alarm.hour, alarm.minute);
               writeOutput(bufferalarm);
             }
 
@@ -700,7 +700,7 @@ void main(void){
             alarm.hour = hour;
             alarm.minute = minute;
             alarm.daynight = daynight;
-            printf("Alarm set to %d: %2d", alarm.hour, alarm.minute );
+            printf("Alarm set to %d: %02d", alarm.hour, alarm.minute );
             RTC_Init();
             enablealarmflag=1;
             alarmflag=1;
@@ -727,7 +727,7 @@ void main(void){
             clock.hour = hour;
             clock.minute = minute;
             clock.daynight = daynight;
-            printf("Clock set to %d: %2d", clock.hour, clock.minute );
+            printf("Clock set to %d: %02d", clock.hour, clock.minute );
             RTC_Init();
             state = DEFAULT;
           }
@@ -1325,7 +1325,7 @@ void sethourclock(void)
                      daynight='P';
 
         printf("HOURINC: %d\n", hour);
-        sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(hourdisplay, "%d:%02d:%02d %cM", hour, minute, second, daynight);
         commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(hourdisplay[i]);
@@ -1397,20 +1397,23 @@ void sethourclock(void)
 
     }
 
-//    else
-//    {
-//        __delay_cycles(300000);
-//    sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
-//   commandWrite(0xC0);
-//    for (i = 0; i < 10; i++)
-//     dataWrite(hourdisplay[i]);
-//    __delay_cycles(300000);
-//    sprintf(blinkhour, "  :%2d:%2d", minute, second);
-//    commandWrite(0xC0);
-//    for (i = 0; i < 10; i++)
-//      dataWrite(blinkhour[i]);
-//
-//   }
+    else{
+        commandWrite(0x80);
+
+        if(hour>=10)
+            sprintf(minutedisplay, "  :%02d:%02d %cM ",  minute, second, daynight);
+        else if(hour<10)
+            sprintf(minutedisplay, " :%02d:%02d %cM ",  minute, second, daynight);
+
+        for (i = 0; i < 9; i++)
+          dataWrite(minutedisplay[i]);
+        __delay_cycles(600000);
+        commandWrite(0x80);
+        sprintf(blinkminute, "%d:%02d:%02d %cM ", hour,minute, second, daynight);
+       for (i = 0; i < 9; i++)
+         dataWrite(blinkminute[i]);
+       __delay_cycles(600000);
+        }
 
 
   }
@@ -1427,7 +1430,7 @@ void setminuteclock(void)
       {
         minute = 0;
         __delay_cycles(300000);
-        sprintf(minutedisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(minutedisplay, "%d:%02d:%02d %cM", hour, minute, second, daynight);
         commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
@@ -1436,7 +1439,7 @@ void setminuteclock(void)
       else if (minute != 59)
       {
         minute += 1;
-        sprintf(minutedisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(minutedisplay, "%d:%02d:%02d %cM", hour, minute, second, daynight);
         commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
@@ -1454,7 +1457,7 @@ void setminuteclock(void)
       {
         minute = 59;
         printf("MINDEC: %d\n", minute);
-        sprintf(minutedisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(minutedisplay, "%d:%02d:%02d %cM", hour, minute, second, daynight);
         commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
@@ -1465,7 +1468,7 @@ void setminuteclock(void)
       {
         minute -= 1;
         printf("MINDEC: %d\n", minute);
-        sprintf(minutedisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(minutedisplay, "%d:%02d:%02d %cM", hour, minute, second, daynight);
         commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(minutedisplay[i]);
@@ -1475,19 +1478,20 @@ void setminuteclock(void)
 
     }
 
-//    while (((((P5->IN & BIT1) == BIT1)) && ((P5->IN & BIT2) == BIT2))){
-//    commandWrite(0xC0);
-//    sprintf(minutedisplay, "%d:%2d:%2d", hour, minute, second);
-//
-//    for (i = 0; i < 10; i++)
-//      dataWrite(minutedisplay[i]);
-//    __delay_cycles(300000);
-//    commandWrite(0xC0);
-//    sprintf(blinkminute, "%d:  :%2d", hour, second);
-//    for (i = 0; i < 11; i++)
-//      dataWrite(blinkminute[i]);
-//    __delay_cycles(300000);
-//    }
+  //while (((((P5->IN & BIT1) == BIT1)) && ((P5->IN & BIT2) == BIT2))){
+else{
+    commandWrite(0x80);
+    sprintf(minutedisplay, "%d:%02d:%02d %cM ", hour, minute, second, daynight);
+
+    for (i = 0; i < 9; i++)
+      dataWrite(minutedisplay[i]);
+    __delay_cycles(600000);
+    commandWrite(0x80);
+    sprintf(blinkminute, "%d:  :%02d %cM ", hour, second, daynight);
+   for (i = 0; i < 9; i++)
+     dataWrite(blinkminute[i]);
+   __delay_cycles(600000);
+    }
 
 
   }
@@ -1513,7 +1517,7 @@ void sethouralarm(void)
                      daynight='P';
 
         printf("HOURINC: %d\n", hour);
-        sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(hourdisplay, "%d:%02d:%02d %cM", hour, minute, second, daynight);
         commandWrite(0x90);
         for (i = 0; i < 10; i++)
           dataWrite(hourdisplay[i]);
@@ -1585,19 +1589,22 @@ void sethouralarm(void)
 
     }
 
-//    while (((((P5->IN & BIT1) == BIT1)) && ((P5->IN & BIT2) == BIT2)))
-//    {
-//    sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
-//    commandWrite(0xC0);
-//    for (i = 0; i < 10; i++)
-//      dataWrite(hourdisplay[i]);
-//    __delay_cycles(300000);
-//    sprintf(blinkhour, "  :%2d:%2d", minute, second);
-//    commandWrite(0xC0);
-//    for (i = 0; i < 10; i++)
-//      dataWrite(blinkhour[i]);
-//    __delay_cycles(300000);
-//    }
+    else{
+           commandWrite(0x90);
+           if(hour>=10)
+               sprintf(minutedisplay, "  :%02d:%02d %cM ",  minute, second, daynight);
+           else if(hour<10)
+               sprintf(minutedisplay, " :%02d:%02d %cM ",  minute, second, daynight);
+
+           for (i = 0; i < 9; i++)
+             dataWrite(minutedisplay[i]);
+           __delay_cycles(600000);
+           commandWrite(0x90);
+           sprintf(blinkminute, "%d:%02d:%02d %cM ", hour,minute, second, daynight);
+          for (i = 0; i < 9; i++)
+            dataWrite(blinkminute[i]);
+          __delay_cycles(600000);
+           }
 
 
   }
@@ -1662,19 +1669,19 @@ void setminutealarm(void)
 
     }
 
-//    while (((((P5->IN & BIT1) == BIT1)) && ((P5->IN & BIT2) == BIT2))){
-//    commandWrite(0xC0);
-//    sprintf(minutedisplay, "%d:%2d:%2d", hour, minute, second);
-//
-//    for (i = 0; i < 10; i++)
-//      dataWrite(minutedisplay[i]);
-//    __delay_cycles(300000);
-//    commandWrite(0xC0);
-//    sprintf(blinkminute, "%d:  :%2d", hour, second);
-//    for (i = 0; i < 11; i++)
-//      dataWrite(blinkminute[i]);
-//    __delay_cycles(300000);
-//    }
+    else{
+        commandWrite(0x90);
+        sprintf(minutedisplay, "%d:%02d:%02d %cM ", hour, minute, second, daynight);
+
+        for (i = 0; i < 9; i++)
+          dataWrite(minutedisplay[i]);
+        __delay_cycles(600000);
+        commandWrite(0x90);
+        sprintf(blinkminute, "%d:  :%02d %cM ", hour, second, daynight);
+       for (i = 0; i < 9; i++)
+         dataWrite(blinkminute[i]);
+       __delay_cycles(600000);
+        }
 
 
   }
