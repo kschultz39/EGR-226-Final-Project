@@ -463,28 +463,49 @@ void main(void){
 
           if (clock.hour > 12)
           {
-            displayhour = (clock.hour) - (12);
+            printf("Modifying above 12");
+              clock.hour = (clock.hour) - (12);
             clock.daynight = 'P';
+            printf("%c\n", clock.daynight);
           }
-          else
+          else if(clock.hour==12)
           {
-            displayhour = (clock.hour);
+              printf("CLock=12\n");
+              clock.hour= 12;
+              clock.daynight= 'P';
+              printf("%c", clock.daynight);
+          }
+          else if(clock.hour <12 && clock.daynight!='P')
+          {
+              printf("Modifying less than 12");
+            clock.hour = (clock.hour);
 
             clock.daynight = 'A';
+            printf("CLock.daynight %c\n", clock.daynight);
           }
 
           if (alarm.hour > 12)
                     {
+                      printf("Modifying alarm > 12");
                       alarm.hour = (alarm.hour) - (12);
                       alarm.daynight = 'P';
+                      printf("Alarm.daynight %c\n", alarm.daynight);
                     }
-                    else
+                    else if (alarm.hour<12)
                     {
-                      displayhour = (alarm.hour);
+                      printf("Modifying alarm <12");
+                        alarm.hour = (alarm.hour);
 
-                      clock.daynight = 'A';
+                      alarm.daynight = 'A';
+                      printf("Alarm.daynight %c\n", alarm.daynight);
                     }
-
+                    else if(alarm.hour==12)
+          {
+              alarm.hour= 12;
+              alarm.daynight= 'P';
+              printf("Alarm hour ==12");
+              printf("%c\n", alarm.daynight);
+          }
           if (!((P5->IN & BIT1) == BIT1)) //On/Off/Up
                  {
                       printf("On/off/up pressed in default");
@@ -497,13 +518,14 @@ void main(void){
 
 
           //Prints time to CCS
-          printf("   %02d:%02d:%02d %cM\n", displayhour, clock.minute, clock.second, clock.daynight);
+          printf("   %02d:%02d:%02d %cM\n", clock.hour, clock.minute, clock.second, clock.daynight);
+          printf("CLOCK DAYNIGHT: %c ALARM DAYNIGHT: %c\n", alarm.daynight, clock.daynight);
 
           commandWrite(0x0C); //turn off blinking cursor
           commandWrite(0x80);
 
           //Prints time to LCD
-          sprintf(buffer, "%d:%02d:%02d %cM                     ", displayhour, clock.minute, clock.second, clock.daynight);
+          sprintf(buffer, "%d:%02d:%02d %cM                     ", clock.hour, clock.minute, clock.second, clock.daynight);
           for (i = 0; i < 16; i++)
             dataWrite(buffer[i]);
 
@@ -519,7 +541,7 @@ void main(void){
               dataWrite(buffer[i]);
 
            //Prints Alarm set time to LCD
-           sprintf(buffer, "%d:%02d:%02d %cM                     ", alarm.hour, alarm.minute, alarm.second, clock.daynight);
+           sprintf(buffer, "%d:%02d:%02d %cM                     ", alarm.hour, alarm.minute, alarm.second, alarm.daynight);
                       commandWrite(0x90); //Prints to line 2 of LCD
                      for (i = 0; i < 16; i++)
                        dataWrite(buffer[i]);
@@ -1325,7 +1347,7 @@ void sethourclock(void)
         printf("HOURINC: %d\n", hour);
         __delay_cycles(300000);
 
-        sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(hourdisplay, "%d:%02d:%02d %cM                     ", hour, minute, second, daynight);
         commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(hourdisplay[i]);
@@ -1346,7 +1368,7 @@ void sethourclock(void)
 
 
         printf("HOURDEC: %d\n", hour);
-        sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(hourdisplay, "%d:%02d:%02d %cM                     ", hour, minute, second, daynight);
         commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(hourdisplay[i]);
@@ -1367,7 +1389,7 @@ void sethourclock(void)
         printf("HOURDEC: %d\n", hour);
         __delay_cycles(300000);
 
-        sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
+        sprintf(hourdisplay, "%d:%02d:%02d %cM                     ", hour, minute, second, daynight);
         commandWrite(0x80);
         for (i = 0; i < 10; i++)
           dataWrite(hourdisplay[i]);
@@ -1375,19 +1397,20 @@ void sethourclock(void)
 
     }
 
-//    while (((((P5->IN & BIT1) == BIT1)) && ((P5->IN & BIT2) == BIT2)))
+//    else
 //    {
+//        __delay_cycles(300000);
 //    sprintf(hourdisplay, "%d:%2d:%2d %cM", hour, minute, second, daynight);
-//    commandWrite(0xC0);
+//   commandWrite(0xC0);
 //    for (i = 0; i < 10; i++)
-//      dataWrite(hourdisplay[i]);
+//     dataWrite(hourdisplay[i]);
 //    __delay_cycles(300000);
 //    sprintf(blinkhour, "  :%2d:%2d", minute, second);
 //    commandWrite(0xC0);
 //    for (i = 0; i < 10; i++)
 //      dataWrite(blinkhour[i]);
-//    __delay_cycles(300000);
-//    }
+//
+//   }
 
 
   }
@@ -1656,4 +1679,3 @@ void setminutealarm(void)
 
   }
 }
-
