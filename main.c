@@ -271,6 +271,14 @@ uint8_t hours, mins, secs;
    //int LEDFlag=1; //global variable for LEDFlag
 
    int alarmminutesLED = 0;
+   int alarmtimelights = 0;
+   int clocktimelights = 0;
+
+   int alarm_increment = 0;
+
+   int LED = 0;
+
+  // int alarmminutesLED = 0;
 
 void RTC_Init();
 enum states
@@ -428,8 +436,80 @@ void main(void){
         if (time_update) {
           time_update = 0;
 
+          //FOR LED WAKEUP LIGHTS
+  int alarmminutesLED = 0;
+    int alarmtimelights = 0;
+    int clocktimelights = 0;
 
-//             //TRYING STUFF
+  alarmtimelights = (alarm.hour * 10000) + (alarm.minute * 100) + (alarm.second);
+
+clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
+
+ alarmminutesLED = ((alarmtimelights) - (clocktimelights));
+
+ alarmminutesLED = abs(alarmminutesLED);
+
+
+
+ if(alarmminutesLED > 500 && alarmminutesLED >= 0 )
+ {
+     PWMBlue = 0;
+
+     //BLUE PWM LED is P7.6 and TA1.2
+     TIMER_A1->CCR[2] = 0;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+
+     //BLUE PWM LED is P7.5 and TA1.3
+     TIMER_A1->CCR[3] = 0;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+
+ }
+
+ if(alarmminutesLED <= 500 && alarmminutesLED >=0 )
+     //alarm.minute >= alarmminutesLED && clock.minute > alarm.minute && alarmminutesLED &&
+ {
+
+//             int i = 0;
+//             i += 1;
+
+     //LED += 1; //increments every second
+
+    // printf("\n LED is %d\n", LED);
+
+     if( alarm_increment)
+     {
+
+         //printf("\n LED after IF is %d\n", LED);
+     //LED STUFF, ALL COMMENTED OUT
+                //Blue PWM LED is P7.6 and TA1.2
+
+
+
+                            if( PWMBlue >= 0 && PWMBlue <= 100)
+                            {
+                        PWMBlue += 1;
+                        printf("%d Percent Brightness\n", PWMBlue);
+
+                        //BLUE PWM LED is P7.6 and TA1.2
+                        TIMER_A1->CCR[2] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+
+                        //BLUE PWM LED is P7.5 and TA1.3
+                        TIMER_A1->CCR[3] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+
+                        alarm_increment = 0;
+//                                       if(i == 99)
+//                                       state == DEFAULT;
+                            }
+
+                           // alarm_increment = 0;
+
+                    }
+
+ }
+
+
+
+
+
+//             //TRYING STUFF FOR ADVANCE TIME
 ////                  displayminute = clock.minute;
 ////                  displaysecond = clock.second;
 //                  //displayhour = clock.hour;
@@ -1054,6 +1134,13 @@ void RTC_C_IRQHandler()
 {
   if (RTC_C->PS1CTL & BIT0)
   {
+      static uint8_t i = 0;
+            ///increment flag
+
+            i = (i+1)%3;
+            if (i == 0)
+                alarm_increment = 1;
+
     time_update = 1;
     clock.hour = RTC_C->TIM1 & 0x00FF;
     clock.minute = (RTC_C->TIM0 & 0xFF00) >> 8;
