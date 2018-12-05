@@ -21,6 +21,9 @@ void pushNibble (uint8_t nibble);
 void pushByte(uint8_t byte);
 void commandWrite(uint8_t command);
 void dataWrite(uint8_t data);
+void beep(unsigned int note, unsigned int duration);
+void delay_us_speaker(unsigned int us);
+void delay_ms_speaker(unsigned int ms );
 
 
 
@@ -35,6 +38,7 @@ void sethourclock(void);
 void setminuteclock(void);
 void sethouralarm(void);
 void setminutealarm(void);
+void play(void);
 
 void PORT1_IRQHandler();
 int alarmflag = 0;
@@ -52,6 +56,7 @@ int hour = 0;
 int minute = 0;
 int second = 0;
 char daynight = 'A';
+int beepcount=0;
 
 
 
@@ -97,7 +102,8 @@ int breath = 0;     //Take a breath after each note.  This creates seperation
 
 //C notes
 #define C4 262.63
-#define C5 524.25
+#define C5 261
+#define c 261
 
 //B notes
 #define B4 493.88
@@ -293,6 +299,7 @@ enum states
   SETMINUTEALARM,
 };
 
+
 void main(void){
 
   WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD; //stop watchdog timer
@@ -316,6 +323,7 @@ void main(void){
 
   __enable_interrupt();
 
+  P5->DIR|=BIT5;
 
   enum states state = DEFAULT;
 
@@ -623,9 +631,35 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
                       {
 
                       printf("ALARM\n");
+                      char printalarm[50]= "ALARM ALARM ALARM      ";
+                      commandWrite(0x80);
+                      for(i=0; i<16;i++)
+                          dataWrite(printalarm[i]);
+
+                     // beepcount+=1;
+                      //PIN INT FOR SOUNDER
+//                              P7->DIR |= BIT4;
+       if(beepcount==0)
+                     {
+                        printf("BEEP 0");
+                         beep(C5, 5000);
+                      }
+       else if (beepcount==1)
+       {
+                          printf("BEEP1");
+                          delay_ms(5000);
+                          beepcount=0;
+                      }
+//                              printf("BEEP1");
+//                              beep(C5, 4000);
+//                              // play();
+//                              printf("BEEP2");
+//                                 delay_ms(4000);
+
 
                       //ALARM ATTENTION KELLY!!!
                       //SetupTimer32s();
+
 
                       //LED AT FULL BRIGHTNESS BIG ZOGGY
                       PWMBlue = 100;
@@ -938,6 +972,7 @@ void InitializeAll(void)
         //The next line turns on all of Timer A1.  None of the above will do anything until Timer A1 is started.
         TIMER_A1->CTL = 0b0000001000010100;
 
+      //  P7->DIR |= BIT4;
 }
 //This function goes through the entire initialization sequence as shown in Figure 4
 void LCD_init(void)
@@ -1749,4 +1784,41 @@ void setminutealarm(void)
 
 
   }
+}
+void delay_ms_speaker(unsigned int ms )
+{
+    unsigned int i;
+    for (i = 0; i<= ms; i++)
+       __delay_cycles(500); //Built-in function that suspends the execution for 500 cicles
+}
+
+void delay_us_speaker(unsigned int us )
+{
+    unsigned int i;
+    for (i = 0; i<= us/2; i++)
+       __delay_cycles(1);
+}
+
+//This function generates the square wave that makes the piezo speaker sound at a determinated frequency.
+void beep(unsigned int note, unsigned int duration)
+{
+    int i;
+    long delay = (long)(10000/note);  //This is the semiperiod of each note.
+    long time = (long)((duration*100)/(delay*2));  //This is how much time we need to spend on the note.
+    for (i=0;i<time;i++)
+    {
+        P5->OUT |= BIT5;     //Set P1.2...
+        delay_us_speaker(delay);   //...for a semiperiod...
+        P5->OUT &= ~BIT5;    //...then reset it...
+        delay_us_speaker(delay);   //...for the other semiperiod.
+    }
+    delay_ms_speaker(20); //Add a little delay to separate the single notes
+}
+
+void play()
+{
+    beep(c, 4000);
+    delay_ms_speaker(4000);
+
+
 }
