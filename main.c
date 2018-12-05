@@ -1,17 +1,20 @@
+//Included Libraries for Clock
 #include "msp.h"
 #include "msp432.h"
 #include <stdio.h>
 #include "math.h"
 #include "stdlib.h""
 
-
-
-
 /**
-   main.c
+* Authors: Kelly Schultz and Nathan Gruber
+* Instructor: Professor Zuidema
+* Date: 12/5/2018
+* Class: EGR 226 LAB
+* Assignment: Final Project, Alarm Clock
 */
-void InitializeAll(void);
 
+//Funtions to be called
+void InitializeAll(void);
 void SysTick_Init(void);
 void LCD_init(void);
 void delay_micro(unsigned microsec);
@@ -24,42 +27,37 @@ void dataWrite(uint8_t data);
 void beep(unsigned int note, unsigned int duration);
 void delay_us_speaker(unsigned int us);
 void delay_ms_speaker(unsigned int ms );
-
-
-
-
-
-char blinkhour[50];
-char blinkminute[50];
-char hourdisplay[50];
-char minutedisplay[50];
-
+void RTC_Init();
 void sethourclock(void);
 void setminuteclock(void);
 void sethouralarm(void);
 void setminutealarm(void);
 void play(void);
-
 void PORT1_IRQHandler();
+
+//Allows the hour and minute to blink and be displayed
+char blinkhour[50];
+char blinkminute[50];
+char hourdisplay[50];
+char minutedisplay[50];
+
+//Flags for alarm to allow snoozing and other various functions
 int alarmflag = 0;
 int snoozeflag=0;
 int enablealarmflag=0;
 int setflag = 0;
 
+//Initilization for displaying clock
 int displayhour = 0;
 int displayminute = 0;
 int displaysecond = 0;
 int result = 0;
 int houralarmchanged=0;
-
 int hour = 0;
 int minute = 0;
 int second = 0;
 char daynight = 'A';
 int beepcount=0;
-
-
-
 
 // global struct variable called clock
 struct
@@ -80,7 +78,7 @@ struct
 } alarm;
 
 
-//SOUNDER CONTENT FOR ALARM///////////////////////////////////////////////////////
+//SOUNDER CONTENT FOR POTENTIAL ALARM SONG
 void SetupTimer32s();
 
 int note = 0;       //The note in the music sequence we are on
@@ -130,132 +128,16 @@ int breath = 0;     //Take a breath after each note.  This creates seperation
 
 #define MAX_NOTE 100 // How many notes are in the song below
 
-float music_note_sequence[][2] = {  // Deck the halls song
+float music_note_sequence[][2] = {  // Tone for potential alarm using timer32
 
-  //FIRST
+  //NOTES PLAY A TONE
   {C5, WHOLE},
   {REST, WHOLE},
-//  {B4, EIGHTH},
-//  {A4, QUARTER},
-//  {G4, QUARTER},
-//
-//  //SECOND
-//  {F4, QUARTER},
-//  {G4, QUARTER},
-//  {A4, QUARTER},
-//  {F4, QUARTER},
-//
-//  //THIRD
-//  {G4, EIGHTH},
-//  {A4, EIGHTH},
-//  {B4, EIGHTH},
-//  {G4, EIGHTH},
-//  {A4, QUARTER},
-//  {G4, EIGHTH},
-//
-//  //FOURTH
-//  {F4, QUARTER},
-//  {E4, QUARTER},
-//  {F4, HALF},
-//
-//
-//  //////////////////////////////////Second line of music/////////////////////////////////////////
-//
-//  //FIRST
-//  {C5, QUARTERPLUS},
-//  {B4, EIGHTH},
-//  {A4, QUARTER},
-//  {G4, QUARTER},
-//
-//
-//  //SECOND
-//  {F4, QUARTER},
-//  {G4, QUARTER},
-//  {A4, QUARTER},
-//  {F4, QUARTER},
-//
-//  //THIRD
-//  {G4, EIGHTH},
-//  {A4, EIGHTH},
-//  {B4, EIGHTH},
-//  {G4, EIGHTH},
-//  {A4, QUARTER},
-//  {G4, EIGHTH},
-//
-//  //FOURTH
-//  {F4, QUARTER},
-//  {E4, QUARTER},
-//  {F4, HALF},
-//
-//  ////////////////////////////////Third line of music/////////////////////////////////////////
-//
-//  //First
-//  {G4, QUARTERPLUS},
-//  {A4, EIGHTH},
-//  {B4, QUARTER},
-//  {G4, QUARTER},
-//
-//  //Second
-//  {A4, QUARTERPLUS},
-//  {B4, EIGHTH},
-//  {C5, QUARTER},
-//  {G4, QUARTER},
-//
-//
-//  //Third
-//  {A4, EIGHTH},
-//  {B4, EIGHTH},
-//  {C5, QUARTER},
-//  {D5, EIGHTH},
-//  {E5, EIGHTH},
-//  {F5, QUARTER},
-//
-//  //Fourth
-//  {E5, QUARTER},
-//  {D5, QUARTER},
-//  {C5, HALF},
-//
-//
-//  ////////////////////////////////Fourth line of music/////////////////////////////////////////
-//
-//  //First
-//  {C5, QUARTERPLUS},
-//  {B4, EIGHTH},
-//  {A4, QUARTER},
-//  {G4, QUARTER},
-//
-//  //Second
-//  {F4, QUARTER},
-//  {G4, QUARTER},
-//  {A4, QUARTER},
-//  {F4, QUARTER},
-//
-//
-//  //THIRD
-//
-//  {D5, EIGHTH},
-//  {D5, EIGHTH},
-//  {D5, EIGHTH},
-//  {D5, EIGHTH},
-//  {C5, QUARTERPLUS},
-//  {B4, EIGHTH},
-//
-//
-//  //FOURTH
-//
-//  {A4, QUARTER},
-//  {G4, QUARTER},
-//  {F4, HALF},
-//
-//  {REST, WHOLE},
-//  {REST, WHOLE},
 };
 
-///SERIAL INIT CODE
-// Making a buffer of 100 characters for serial to store to incoming serial data
-#define BUFFER_SIZE 100
-char INPUT_BUFFER[BUFFER_SIZE];
-// initializing the starting position of used buffer and read buffer
+///SERIAL INITILIZATION CODE
+#define BUFFER_SIZE 100 // Making a buffer of 100 characters for serial to store to incoming serial data
+char INPUT_BUFFER[BUFFER_SIZE]; // initializing the starting position of used buffer and read buffer
 uint8_t storage_location = 0; // used in the interrupt to store new data
 uint8_t read_location = 0; // used in the main application to read valid data that hasn't been read yet
 
@@ -265,30 +147,20 @@ void setupP1(); // Sets up P1.0 as an output to drive the on board LED
 void setupSerial(); // Sets up serial for use and enables interrupts
 unsigned int Serial_flag = 0;
 
-
-//FOR TIME FROM ZUIDEMA
+//FOR ADVANCING TIME AND ALARM/TIME UPDATE
 int time_update = 0, alarm_update = 0;
 uint8_t hours, mins, secs;
+int display_state = 0;
 
-  //FOR TIME FROM ZUIDEMA, FOR SETTING FASTER ADVANCING TIME
-   // display_state 0=show time, 1= show alarm
-   int display_state = 0;
+//LED INITILIZATION FOR WAKEUP LIGHTS
+int PWMBlue=0; //global variable for blue PWM value
+int alarmminutesLED = 0;
+int alarmtimelights = 0;
+int clocktimelights = 0;
+int alarm_increment = 0;
+int LED = 0;
 
-//LED STUFF FOR WAKEUP LIGHTS
-   int PWMBlue=0; //global variable for blue PWM value
-   //int LEDFlag=1; //global variable for LEDFlag
-
-   int alarmminutesLED = 0;
-   int alarmtimelights = 0;
-   int clocktimelights = 0;
-
-   int alarm_increment = 0;
-
-   int LED = 0;
-
-  // int alarmminutesLED = 0;
-
-void RTC_Init();
+//Initilizes the main states for the alarm clock
 enum states
 {
   DEFAULT,
@@ -299,18 +171,18 @@ enum states
   SETMINUTEALARM,
 };
 
-
 void main(void){
 
   WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD; //stop watchdog timer
   InitializeAll();
   char buffer[50];
-  //serial communication stuf
+   
+  //serial communication initilization material
   char string[BUFFER_SIZE]; // Creates local char array to store incoming serial commands
 
   int i;
-  //int seconds;
 
+   //Sets clock to "AM"
   clock.daynight = 'A';
 
   //SERIAL CODE
@@ -321,10 +193,11 @@ void main(void){
 
   RTC_Init(); //enable RTC
 
-  __enable_interrupt();
+  __enable_interrupt(); //enable interrupts
 
-  P5->DIR|=BIT5;
+  P5->DIR|=BIT5; //Pin is pulled for sounder, easier to declare here than in Init All for some reason, wont work otherwise
 
+   //Defalut state set to Default
   enum states state = DEFAULT;
 
   while (1)
@@ -332,11 +205,8 @@ void main(void){
     switch (state)
     {
       case DEFAULT:
-        //workingclock();
+        
         setflag = 0;
-        // printf("Alarm set to %d: %02d\n", alarm.hour, alarm.minute);
-        //printf("Clock set to %d: %d\n", clock.hour, clock.minute);
-
 
         //SERIAL READ STUFF//////////////////////////
         if (Serial_flag)
@@ -344,37 +214,43 @@ void main(void){
           readInput(string); // Read the input up to \n, store in string.  This function doesn't return until \n is received
 
           if (string[0] != '\0') // if string is not empty, check the inputted data.
-          {
-            //entrynumbers = atoi(&string[1]);
-
+          {         
             //Set Time of clock through serial
             if (string[0] == 'S' && string[1] == 'E' && string[2] == 'T' && string[3] == 'T' && string[4] == 'I' && string[5] == 'M' && string[6] == 'E')
             {
+               //Prints statement to CCS
               printf("\nset time through serial");
 
               writeOutput("\n");
               writeOutput("Set Time");
 
+               //Math to properly track values into serial port and alarm clock
               clock.hour = (string[8] - 48) * 10 + (string[9] - 48);
               clock.minute = (string[11] - 48) * 10 + (string[12] - 48);
               clock.second = (string[14] - 48) * 10 + (string[15] - 48);
 
+               //Prints statement to Serial UART port
               writeOutput(string);
               writeOutput("\n");
               RTC_Init(); //enable RTC
+               
             }
-
+             
             //Set alarm clock through serial
             if (string[0] == 'S' && string[1] == 'E' && string[2] == 'T' && string[3] == 'A' && string[4] == 'L' && string[5] == 'A' && string[6] == 'R'  && string[7] == 'M')
             {
+               //Prints to CCS
               printf("\nset alarm through serial");
 
+              //Prints to the Serial UART Port
               writeOutput("Set Alarm");
               writeOutput("\nSet Alarm\n ");
 
+               //Math to properly track in alarm hour and minute time
               alarm.hour = (string[9] - 48) * 10 + (string[10] - 48);
               alarm.minute = (string[12] - 48) * 10 + (string[13] - 48);
 
+               //Prints to the CCS
               writeOutput(string);
               writeOutput("\n");
               RTC_Init();
@@ -384,8 +260,9 @@ void main(void){
             //READ Current time through serial
             if (string[0] == 'R' && string[1] == 'E' && string[2] == 'A' && string[3] == 'D' && string[4] == 'T' && string[5] == 'I' && string[6] == 'M' && string[7] == 'E')
             {
+               //Prints to both Serial and CCS consoule 
               printf("\nRead time through Serial");
-              // writeOutput("\nTHE CURRENT TIME IS\n ");
+              writeOutput("\nTHE CURRENT TIME IS\n ");
               char buffer[100];
               sprintf(buffer, "The current Time is %02d:%02d:%02d", clock.hour, clock.minute, clock.second);
               writeOutput(buffer);
@@ -411,22 +288,23 @@ void main(void){
           time_update = 0;
 
           //FOR LED WAKEUP LIGHTS
-  int alarmminutesLED = 0;
-    int alarmtimelights = 0;
-    int clocktimelights = 0;
+          int alarmminutesLED = 0;
+          int alarmtimelights = 0;
+          int clocktimelights = 0;
 
-  alarmtimelights = (alarm.hour * 10000) + (alarm.minute * 100) + (alarm.second);
+        //Math to properly track in time values and start wake up lights 5 min before alarm
+       alarmtimelights = (alarm.hour * 10000) + (alarm.minute * 100) + (alarm.second);
 
-clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
+       clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
 
- alarmminutesLED = ((alarmtimelights) - (clocktimelights));
+       alarmminutesLED = ((alarmtimelights) - (clocktimelights));
 
- alarmminutesLED = abs(alarmminutesLED);
-
+       alarmminutesLED = abs(alarmminutesLED);
 
 //If time is not within 5 minutes, the lights will not come on
  if(alarmminutesLED > 500 && alarmminutesLED >= 0 )
  {
+    //Sets lights to off 
      PWMBlue = 0;
 
      //BLUE PWM LED is P7.6 and TA1.2
@@ -437,40 +315,38 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
 
  }
 
- //new lights function
+ //If alarm within these parameters the lights will check to see if they should increment or not
  if(enablealarmflag == 1 || enablealarmflag == 3)
  {
 
-
-
+    //If time is within 5 min, start to increment lights
  if(alarmminutesLED <= 500 && alarmminutesLED >=0 )
-     //alarm.minute >= alarmminutesLED && clock.minute > alarm.minute && alarmminutesLED &&
+     
      {
 
-
-
+    //If flag, check to increment lights
      if( alarm_increment)
      {
 
+                            //If PWM value is within 100, start to increment the lights 
                             if( PWMBlue >= 0 && PWMBlue <= 100)
                             {
-                        PWMBlue += 1;
-                        printf("%d Percent Brightness\n", PWMBlue);
+                               //add 1% to brightness level every 3 seconds
+                               PWMBlue += 1;
+                               printf("%d Percent Brightness\n", PWMBlue);
 
-                        //BLUE PWM LED is P7.6 and TA1.2
-                        TIMER_A1->CCR[2] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+                                //BLUE PWM LED is P7.6 and TA1.2
+                                TIMER_A1->CCR[2] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
 
-                        //BLUE PWM LED is P7.5 and TA1.3
-                        TIMER_A1->CCR[3] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
-
-                        alarm_increment = 0;
+                                 //BLUE PWM LED is P7.5 and TA1.3
+                                 TIMER_A1->CCR[3] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
+                                 
+                                 //Resest Flag
+                                  alarm_increment = 0;
 
                             }
-
                     }
-
      }
-
  }
 
 
@@ -507,6 +383,7 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
 ////                                           displaysecond = clock.second;
 //                                       }
 
+           //Function to ensure PM vs AM
           if (clock.hour > 12)
           {
             printf("Modifying above 12");
@@ -514,6 +391,8 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
             clock.daynight = 'P';
             printf("%c\n", clock.daynight);
           }
+           
+          //If 12, dont modify
           else if(clock.hour==12)
           {
               printf("CLock=12\n");
@@ -521,6 +400,8 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
               clock.daynight= 'P';
               printf("%c", clock.daynight);
           }
+           
+           //Else if, set to PM
           else if(clock.hour <12 && clock.daynight!='P')
           {
               printf("Modifying less than 12");
@@ -530,6 +411,7 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
             printf("CLock.daynight %c\n", clock.daynight);
           }
 
+           //Function to ensure AM vs PM for alarm
           if (alarm.hour > 12)
                     {
                       printf("Modifying alarm > 12");
@@ -537,21 +419,28 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
                       alarm.daynight = 'P';
                       printf("Alarm.daynight %c\n", alarm.daynight);
                     }
+           
                     else if (alarm.hour<12)
                     {
+                       
                       printf("Modifying alarm <12");
                         alarm.hour = (alarm.hour);
 
                       alarm.daynight = 'A';
                       printf("Alarm.daynight %c\n", alarm.daynight);
+                       
                     }
+           
                     else if(alarm.hour==12)
           {
+                       
               alarm.hour= 12;
               alarm.daynight= 'P';
               printf("Alarm hour ==12");
               printf("%c\n", alarm.daynight);
+                       
           }
+           
           if (!((P5->IN & BIT1) == BIT1)) //On/Off/Up
                  {
                       printf("On/off/up pressed in default");
@@ -567,8 +456,7 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
                          enablealarmflag=1; //enable alarm
 
                  }
-
-
+           
           //Prints time to CCS
           printf("   %02d:%02d:%02d %cM\n", clock.hour, clock.minute, clock.second, clock.daynight);
           printf("CLOCK DAYNIGHT: %c ALARM DAYNIGHT: %c\n", alarm.daynight, clock.daynight);
@@ -607,21 +495,22 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
           float Cheat;
           float Fheat;
 
+          //Fucntions that will convert the voltage into temperature
           voltage = ((3.3 / 4096) * result);  //function that will convert 12-bit resolution output into a voltage reading depending on the position of the potentiometer
-
+          //Converts for Clecius
           Cheat = ( ( ( voltage * 1000) - 500 ) / 10 );
-
+          //Converts for Fheat
           Fheat = ((Cheat * (9.0 / 5.0)) + 32.0);
 
+          //Prints the heat for Fahrenheit 
           printf("Fheat is %lf\n", Fheat);
-
+          //Prints to the LCD
           sprintf(buffer, "      %.1f", Fheat);    //puts X value in the string of buffer through use of sprintf() function
           for (i = 0; i < 10; i++) //prints string with information about X in the first line
             dataWrite(buffer[i]);
           dataWrite('F');
 
 //ALARM FUNCTION
-
           if (alarm_update)
           {
 
@@ -636,30 +525,19 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
                       for(i=0; i<16;i++)
                           dataWrite(printalarm[i]);
 
-                     // beepcount+=1;
-                      //PIN INT FOR SOUNDER
-//                              P7->DIR |= BIT4;
        if(beepcount==0)
                      {
+                        //Sounds the alarm
                         printf("BEEP 0");
                          beep(C5, 5000);
                       }
        else if (beepcount==1)
        {
+                          //Sounds the alarm
                           printf("BEEP1");
                           delay_ms(5000);
                           beepcount=0;
                       }
-//                              printf("BEEP1");
-//                              beep(C5, 4000);
-//                              // play();
-//                              printf("BEEP2");
-//                                 delay_ms(4000);
-
-
-                      //ALARM ATTENTION KELLY!!!
-                      //SetupTimer32s();
-
 
                       //LED AT FULL BRIGHTNESS BIG ZOGGY
                       PWMBlue = 100;
@@ -677,6 +555,7 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
                                       enablealarmflag=3;
                                       snoozeflag=1;
                                       alarm.minute= alarm.minute+10; //set new snooze alarm for 10 minutes after current alarm
+                          
                                       if(alarm.minute>=60)
                                           {
                                           alarm.minute= (alarm.minute-60);
@@ -716,35 +595,6 @@ clocktimelights = (clock.hour * 10000) + (clock.minute * 100) + (clock.second);
                                   }
 
                       }
-
-
-
-//           // SetupTimer32s();   //FOR SOUNDER ALARMInitializes Timer32_1 as a non-interrupt timer and Timer32_2 as a interrupt timers.  Also initializes TimerA and P2.4 for music generation.
-//            //alarmflag=0;
-//
-//
-//            //LED STUFF, ALL COMMENTED OUT
-//            //Blue PWM LED is P7.6 and TA1.2
-//            if( PWMBlue >= 0 && PWMBlue <= 100)
-//            {
-//                int i;
-//                for (i = 0; i < 100; i++)
-//                {
-//                    __delay_cycles(9000000);
-//                    PWMBlue += 1;
-//                    printf("%d Percent Brightness\n", PWMBlue);
-//
-//                    //BLUE PWM LED is P7.6 and TA1.2
-//                    TIMER_A1->CCR[2] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
-//
-//                    //BLUE PWM LED is P7.5 and TA1.3
-//                    TIMER_A1->CCR[3] = PWMBlue * 10 - 1;  // all other inputs scale by multiply by 10 and subtracting 1.  10% is 99, 50% is 499, 100% is 999
-//
-//                }
-//
-//            }
-//
-//
 
             }
               else if(enablealarmflag==0)
