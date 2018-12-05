@@ -519,9 +519,9 @@ void main(void){
                   while(alarm_update==1)
                       {
 
-                      printf("ALARM\n");
-                      char printalarm[50]= "ALARM ALARM ALARM      ";
-                      commandWrite(0x80);
+                      printf("ALARM\n"); //Prints ALARM to the CCS 
+                      char printalarm[50]= "ALARM ALARM ALARM      ";//Prints alarm to the LCD
+                      commandWrite(0x80); //Prints to the first line
                       for(i=0; i<16;i++)
                           dataWrite(printalarm[i]);
 
@@ -567,10 +567,11 @@ void main(void){
                                       alarm_update=0;
 
                                   }
-                                  if (!((P5->IN & BIT1) == BIT1)) //On/Off/Up
+                    
+                                  //On/Off/Up
+                                  if (!((P5->IN & BIT1) == BIT1)) 
                                   {
                                       printf("On/off/Up pressed during alarm");
-
 
                                       if(snoozeflag)
                                       {
@@ -585,8 +586,7 @@ void main(void){
                                           else if (houralarmchanged!=1)
                                               alarm.minute= alarm.minute-10;
                                           RTC_Init();
-                                          snoozeflag=0;
-                                          //enablealarmflag=1;
+                                          snoozeflag=0;                                      
                                           __delay_cycles(3000000);
                                       }
 
@@ -603,11 +603,7 @@ void main(void){
                   alarm_update=0;
               }
 
-            // state = DEFAULT;
-
-
           }
-
 
           if (setflag == 1)
           {
@@ -620,6 +616,8 @@ void main(void){
             state = SETHOURCLOCK;
           }
           break;
+         
+        //State for setting the hour of the alarm
         case SETHOURALARM:
           printf("Setting hour\n");
           setflag = 0;
@@ -631,6 +629,8 @@ void main(void){
 
           }
           break;
+          
+        //State for setting the minute of the alarm
         case SETMINUTEALARM:
           printf("Setting Minute Alarm\n");
           setflag = 0;
@@ -648,6 +648,8 @@ void main(void){
             state = DEFAULT;
           }
           break;
+          
+        //State for setting the clock hour
         case SETHOURCLOCK:
           printf("setting hour clock\n");
           setflag = 0;
@@ -658,6 +660,8 @@ void main(void){
             state = SETMINUTECLOCK;
           }
           break;
+        
+        //State for setting the minute of the clock
         case SETMINUTECLOCK:
           printf("Setting Minute clock\n");
           setflag = 0;
@@ -673,9 +677,7 @@ void main(void){
             state = DEFAULT;
           }
           break;
-
-
-
+          
         }
     }
 
@@ -683,6 +685,7 @@ void main(void){
 
 }
 
+//Function to initialize all pins 
 void InitializeAll(void)
 {
   WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;     // stop watchdog timer
@@ -693,21 +696,16 @@ void InitializeAll(void)
   P3->DIR |= (BIT2 | BIT3); //sets P3.2 and P3.3 as OUTPUT
   //P3->OUT &= ~(BIT2|BIT3); //sets P3.2 and P3.3 to 0 for RS RW =0
 
-
   //LCD
   P2->SEL0 &= ~(BIT4 | BIT5 | BIT6 | BIT7); //sets (DB4-DB7) P2.4, P2.5, P2.5, P2.6, P2.7 as GPIO
   P2->SEL1 &= ~(BIT4 | BIT5 | BIT6 | BIT7);
   P2->DIR |= (BIT4 | BIT5 | BIT6 | BIT7); //sets pins 4.4-4.7 to OUTPUT
 
-
-
-
   P6->SEL0 &= ~BIT4; //sets P6.4 to GPIO (ENABLE PIN)
   P6->SEL1 &= ~BIT4; //sets P6.4 to GPIO (ENABLE PIN)
   P6->DIR |= BIT4; //sets as output
   P6->OUT &= ~BIT4; //sets Enable pin to 0 initially
-
-
+  
   LCD_init();
 
   //Pin enables for PWM LEDs (Referencing code from Zuidema In-class example Week 5 part 1)
@@ -746,8 +744,6 @@ void InitializeAll(void)
   P5 -> DIR &= ~(BIT1 | BIT2);
   P5 -> REN |= (BIT1 | BIT2);
   P5->OUT |= (BIT1 | BIT2);
-  //    P5->IE |= (BIT1|BIT2);
-  //    P5->IES |= (BIT1|BIT2);
 
 //BUTTON INITIALIZATION FOR SIDE BUTTONS, SPEED TIME UP/ SLOW TIME DOWN
       P1->SEL0 &= ~(BIT1|BIT4);
@@ -775,16 +771,15 @@ void InitializeAll(void)
   TIMER32_1->LOAD = 5860 - 1; //0.25 seconds @ 3MHz
 
   NVIC_EnableIRQ(T32_INT1_IRQn);
+  
   __enable_interrupt();
 
-
-  //INITIALIZE SERIAL STUFF
+  //INITIALIZE SERIAL 
   P1->SEL0 |=  (BIT2 | BIT3); // P1.2 and P1.3 are EUSCI_A0 RX
   P1->SEL1 &= ~(BIT2 | BIT3); // and TX respectively.
 
   EUSCI_A0->CTLW0 = BIT0;
   EUSCI_A0->CTLW0 = 0b10000110000001;
-
 
   EUSCI_A0->CTLW0  = BIT0; // Disables EUSCI. Default configuration is 8N1
   EUSCI_A0->CTLW0 |= BIT7; // Connects to SMCLK BIT[7:6] = 10
@@ -803,36 +798,27 @@ void InitializeAll(void)
   EUSCI_A0->IE |= BIT0;      // Enable interrupt
   NVIC_EnableIRQ(EUSCIA0_IRQn);
 
-
   //LED INIT FOR WAKE UP
   //Pin enables for PWM LEDs (Referencing code from Zuidema In-class example Week 5 part 1)
-        P7->SEL0 |= (BIT5|BIT6); //sets SEL0=1;
-        P7->SEL1 &= (BIT5|BIT6);  //SEL1 = 0. Setting SEL0=1 and SEL1=0 activates PWM function
-        P7->DIR |= (BIT5|BIT6);    // Set pins as  PWM output.
-        P7->OUT &= ~(BIT5|BIT6);
+  P7->SEL0 |= (BIT5|BIT6); //sets SEL0=1;
+  P7->SEL1 &= (BIT5|BIT6);  //SEL1 = 0. Setting SEL0=1 and SEL1=0 activates PWM function
+  P7->DIR |= (BIT5|BIT6);    // Set pins as  PWM output.
+  P7->OUT &= ~(BIT5|BIT6);
 
-        TIMER_A1->CCR[0] = 999;  //1000 clocks = 0.333 ms.  This is the period of everything on Timer A1.  0.333 < 16.666 ms so the on/off shouldn't
+  TIMER_A1->CCR[0] = 999;  //1000 clocks = 0.333 ms.  This is the period of everything on Timer A1.  0.333 < 16.666 ms so the on/off shouldn't
                                      //be visible with the human eye.  1000 makes easy math to calculate duty cycle.  No particular reason to use 1000.
+  TIMER_A1->CCTL[2] = 0b0000000011100000;  //reset / set compare.   Duty Cycle = CCR[1]/CCR[0].
+  TIMER_A1->CCR[2] = 0;  //P7.6 initialize to 0% duty cycle
+  TIMER_A1->CCTL[3] = 0b0000000011100000;
+  TIMER_A1->CCR[3] = 0;  //P7.5 intialize to 0% duty cycle
 
-        TIMER_A1->CCTL[2] = 0b0000000011100000;  //reset / set compare.   Duty Cycle = CCR[1]/CCR[0].
-        TIMER_A1->CCR[2] = 0;  //P7.6 initialize to 0% duty cycle
-        TIMER_A1->CCTL[3] = 0b0000000011100000;
-        TIMER_A1->CCR[3] = 0;  //P7.5 intialize to 0% duty cycle
+  //The next line turns on all of Timer A1.  None of the above will do anything until Timer A1 is started.
+  TIMER_A1->CTL = 0b0000001000010100;
 
-        //The next line turns on all of Timer A1.  None of the above will do anything until Timer A1 is started.
-        TIMER_A1->CTL = 0b0000001000010100;
-
-      //  P7->DIR |= BIT4;
 }
 //This function goes through the entire initialization sequence as shown in Figure 4
 void LCD_init(void)
 {
-  //P3->OUT &= ~BIT2;    //P3.2 is RS, set to 0 because sending command
-
-  //P3->OUT &= ~BIT2;    //P3.2 is RS, set to 0 because sending command
-
-
-
 
   commandWrite(0x03);   //3 in HEX
   delay_ms(100);  //waits 100 ms
@@ -841,16 +827,10 @@ void LCD_init(void)
   commandWrite(0x03); //3 in HEX
   delay_ms(100);  //waits 100 ms
 
-
-
-
   commandWrite(0x02); //2 in HEX
   delay_micro(100); //waits 100 microseconds
   commandWrite(0x02); //2 in HEX
   delay_micro(100); ///waits 100 microseconds
-
-
-
 
   commandWrite(0x08); //8 in HEX
   delay_micro(100); //waits 100 microseconds
@@ -860,7 +840,6 @@ void LCD_init(void)
   delay_micro(100); //waits 100 microseconds
   commandWrite(0x06); //HEX 06
   delay_ms(10); //waits 10 microseconds
-
 
   //INitialization complete according to Figure 4 in prelab
   //INitialization complete according to Figure 4 in prelab
@@ -888,6 +867,7 @@ void delay_ms (unsigned ms)
   while ((SysTick -> CTRL & 0x00010000) == 0);
 
 }
+
 //Sequence the Enable (E) pin as shown in Figure 6
 void PulseEnablePin(void)
 {
@@ -900,6 +880,7 @@ void PulseEnablePin(void)
   P6->OUT &= ~BIT4; //sets enable pin to LOW
   delay_micro(100);
 }
+
 //Pushes 1 nibble onto the data pins and pulses the Enable pin
 void pushNibble (uint8_t nibble)
 {
@@ -917,40 +898,36 @@ void pushByte(uint8_t byte)
   uint8_t temp;
   temp = ((byte & 0xF0) >> 4);
 
-
   //MOST SIGNIFICANT
   pushNibble(temp);
-
 
   //LEAST SIGNIFICANT
   temp = (byte & 0x0F);
   pushNibble(temp);
   delay_micro(100);
 
-
 }
+
 //write one byte of COMMAND by calling the pushByte() function with the COMMAND parameter
 void commandWrite(uint8_t command)
 {
   //RW to zero
   P3->OUT &= ~(BIT2); //pulls RS pin LOW (expects instructions)
 
-
   //RS to zero
   P3 ->OUT &= ~(BIT3);
   pushByte(command);
   delay_ms(100);
 }
+
 //writes one byte of DATA by calling the pushByte() function within the DATA parameter
 void dataWrite(uint8_t data)
 {
   P3->OUT |= BIT2; //pulls RS pin HIGH (expects data)
   pushByte(data);
-
-
-
 }
 
+//Systic Set up function
 void SysTick_Init(void)
 {
   SysTick -> CTRL = 0; //disable SysTick during setup
@@ -965,7 +942,6 @@ void T32_INT1_IRQHandler()
   TIMER32_1->INTCLR = 1;      // Clear interrupt needs to happen first for some reason (unknown)
 
   // add to seconds
-
   result = ADC14->MEM[5];  //read conversion result, STORES TO MEM LOCATION 5
 }
 
@@ -981,17 +957,10 @@ void PORT1_IRQHandler(void)
     printf("1.7 pressed");
   }
 
-//     //Add both buttons here setflag =3 and set falg = 2 added from Zuidemas advanced RTC code
-//    if(P1->IFG & BIT1) {                                //If P1.1 had an interrupt
-//            display_state = 1;
-//        }
-//        if(P1->IFG & BIT4) {                                //If P1.4 had an interrupt
-//            display_state = 0;
-//        }
-//
  P1->IFG = 0;                                        //Clear all flags
 }
 
+//Function to set us the IRQ handler for the RTC clock
 void RTC_C_IRQHandler()
 {
   if (RTC_C->PS1CTL & BIT0)
@@ -1072,7 +1041,6 @@ void SetupTimer32s()
    Sets up the next note to play in sequence and loads it into TimerA for play back at that frequency.
    Enables a new Timer32 value to interrupt after the note is complete.
   -------------------------------------------------------------------------------------------------------------------------------*/
-
 void T32_INT2_IRQHandler()
 {
   TIMER32_2->INTCLR = 1;                                      //Clear interrupt flag so it does not interrupt again immediately.
@@ -1089,12 +1057,7 @@ void T32_INT2_IRQHandler()
       TIMER_A1->CCR[0] = 0;
       TIMER_A1->CCR[4] = 0;
       TIMER_A1->CCR[1] = 0;
-
-      //P1->OUT |= BIT0; //Turn ON
     }
-
-
-
 
     else {
       TIMER_A1->CCR[0] = 3000000 / music_note_sequence[note][0];  //Math in an interrupt is bad behavior, but shows how things are happening.  This takes our clock and divides by the frequency of this note to get the period.
@@ -1108,7 +1071,6 @@ void T32_INT2_IRQHandler()
     breath = 1;                                             //Next time through should be a breath for separation.
   }
 }
-
 
 /*----------------------------------------------------------------
    void writeOutput(char *string)
@@ -1192,7 +1154,6 @@ void EUSCIA0_IRQHandler(void)
   }
 }
 
-
 /*----------------------------------------------------------------
    void setupSerial()
    Sets up the serial port EUSCI_A0 as 115200 8E2 (8 bits, Even parity,
@@ -1229,8 +1190,7 @@ void setupSerial()
   NVIC_EnableIRQ(EUSCIA0_IRQn);
 }
 
-
-//RTC CODE
+//RTC CODE, starts the real time clock on the MSP432
 void RTC_Init()
 {
   //RTC CODE FROM LECTURE
@@ -1252,7 +1212,7 @@ void RTC_Init()
 
 }
 
-
+//Function to set the hour clock
 void sethourclock(void)
 {
   int i = 0;
@@ -1289,7 +1249,6 @@ void sethourclock(void)
 
               hour=1;
 
-
               }
           else if(hour!=12)
               hour += 1;
@@ -1314,8 +1273,6 @@ void sethourclock(void)
         else if(daynight=='A')
             daynight='P';
 
-
-
         printf("HOURDEC: %d\n", hour);
         sprintf(hourdisplay, "%d:%02d:%02d %cM                     ", hour, minute, second, daynight);
         commandWrite(0x80);
@@ -1328,13 +1285,9 @@ void sethourclock(void)
       }
       else if (hour != 1)
       {
-
-
-
-//
+        
        hour -= 1;
-//
-//          }
+
         printf("HOURDEC: %d\n", hour);
         __delay_cycles(300000);
 
@@ -1363,10 +1316,10 @@ void sethourclock(void)
          dataWrite(blinkminute[i]);
        __delay_cycles(600000);
         }
-
-
   }
 }
+
+//Function to set the minute clock
 void setminuteclock(void)
 {
   int i = 0;
@@ -1394,8 +1347,6 @@ void setminuteclock(void)
           dataWrite(minutedisplay[i]);
         printf("MININC: %d\n", minute);
         __delay_cycles(300000);
-
-
 
       }
     }
@@ -1427,7 +1378,6 @@ void setminuteclock(void)
 
     }
 
-  //while (((((P5->IN & BIT1) == BIT1)) && ((P5->IN & BIT2) == BIT2))){
 else{
     commandWrite(0x80);
     sprintf(minutedisplay, "%d:%02d:%02d %cM ", hour, minute, second, daynight);
@@ -1441,10 +1391,10 @@ else{
      dataWrite(blinkminute[i]);
    __delay_cycles(600000);
     }
-
-
   }
 }
+
+//Function to set the alarm
 void sethouralarm(void)
 {
   int i = 0;
@@ -1453,7 +1403,6 @@ void sethouralarm(void)
   while (setflag == 0)
 
   {
-
 
     if (!((P5->IN & BIT1) == BIT1))
     {
@@ -1520,13 +1469,9 @@ void sethouralarm(void)
       }
       else if (hour != 1)
       {
-
-
-
-//
+        
        hour -= 1;
-//
-//          }
+
         printf("HOURDEC: %d\n", hour);
         __delay_cycles(300000);
 
@@ -1555,9 +1500,10 @@ void sethouralarm(void)
           __delay_cycles(600000);
            }
 
-
   }
 }
+
+//Function to set the minute alarm
 void setminutealarm(void)
 {
   int i = 0;
@@ -1585,8 +1531,6 @@ void setminutealarm(void)
           dataWrite(minutedisplay[i]);
         printf("MININC: %d\n", minute);
         __delay_cycles(300000);
-
-
 
       }
     }
@@ -1635,6 +1579,8 @@ void setminutealarm(void)
 
   }
 }
+
+//Delay function for sounder, milliseconds
 void delay_ms_speaker(unsigned int ms )
 {
     unsigned int i;
@@ -1642,6 +1588,7 @@ void delay_ms_speaker(unsigned int ms )
        __delay_cycles(500); //Built-in function that suspends the execution for 500 cicles
 }
 
+//Delay function for sounder, microseconds
 void delay_us_speaker(unsigned int us )
 {
     unsigned int i;
@@ -1665,10 +1612,9 @@ void beep(unsigned int note, unsigned int duration)
     delay_ms_speaker(20); //Add a little delay to separate the single notes
 }
 
+//Function that plays the alarm sound
 void play()
 {
     beep(c, 4000);
     delay_ms_speaker(4000);
-
-
 }
