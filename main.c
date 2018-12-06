@@ -1579,7 +1579,11 @@ void setminutealarm(void)
 
   }
 }
-
+/*
+Attention Professor Zuidema,
+the following three functions are referencing the following site
+http://processors.wiki.ti.com/index.php/Playing_The_Imperial_March
+*/
 //Delay function for sounder, milliseconds
 void delay_ms_speaker(unsigned int ms )
 {
@@ -1604,7 +1608,7 @@ void beep(unsigned int note, unsigned int duration)
     long time = (long)((duration*100)/(delay*2));  //This is how much time we need to spend on the note.
     for (i=0;i<time;i++)
     {
-        P5->OUT |= BIT5;     //Set P1.2...
+        P5->OUT |= BIT5;     //Set P5.5...
         delay_us_speaker(delay);   //...for a semiperiod...
         P5->OUT &= ~BIT5;    //...then reset it...
         delay_us_speaker(delay);   //...for the other semiperiod.
@@ -1612,9 +1616,4 @@ void beep(unsigned int note, unsigned int duration)
     delay_ms_speaker(20); //Add a little delay to separate the single notes
 }
 
-//Function that plays the alarm sound
-void play()
-{
-    beep(c, 4000);
-    delay_ms_speaker(4000);
-}
+
